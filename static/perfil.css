@@ -1,0 +1,437 @@
+/* ============================================================================
+   perfil.css — NoteFlow
+   Página de perfil de usuario: responsive, temas claro/oscuro.
+   Organización:
+     1.  Variables y Reset
+     2.  Temas claro / oscuro
+     3.  Layout principal
+     4.  Header (botón volver)
+     5.  Cards
+     6.  Títulos de sección
+     7.  Sección perfil — avatar y datos
+     8.  Formularios
+     9.  Botones
+     10. Vista previa de foto
+     11. Badge tema actual
+     12. Toasts
+     13. Modal (cerrar sesión)
+     14. Alertas (legacy)
+     15. Responsive
+   ============================================================================ */
+
+
+/* ============================================================================
+   1. VARIABLES Y RESET
+   ============================================================================ */
+:root {
+    --primary:        #4c62c2;
+    --primary-dark:   #3a4fa8;
+
+    --bg-claro:       #f0f2f8;
+    --text-claro:     #2c3e50;
+    --card-bg-claro:  #ffffff;
+    --border-claro:   #e1e4ea;
+
+    --bg-oscuro:      #111827;
+    --text-oscuro:    #e2e8f0;
+    --card-bg-oscuro: #1f2937;
+    --border-oscuro:  #374151;
+
+    --radius:  12px;
+    --success: #2ecc71;
+    --danger:  #e74c3c;
+    --warning: #f39c12;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+
+/* ============================================================================
+   2. TEMAS
+   ============================================================================ */
+
+/* ── Claro ── */
+body.tema-claro {
+    background: var(--bg-claro);
+    color: var(--text-claro);
+}
+
+body.tema-claro .card              { background: var(--card-bg-claro); color: var(--text-claro); border: 1px solid var(--border-claro); }
+body.tema-claro input,
+body.tema-claro select             { background: #fff; color: var(--text-claro); border-color: var(--border-claro); }
+body.tema-claro .back-btn          { background: var(--primary); color: #fff; }
+body.tema-claro .section-divider   { border-color: var(--border-claro); }
+body.tema-claro .info-row          { border-bottom-color: var(--border-claro); }
+body.tema-claro .tema-actual       { background: #fef3c7; color: #92400e; }
+
+/* ── Oscuro ── */
+body.tema-oscuro {
+    background: var(--bg-oscuro);
+    color: var(--text-oscuro);
+}
+
+body.tema-oscuro .card             { background: var(--card-bg-oscuro); color: var(--text-oscuro); border: 1px solid var(--border-oscuro); }
+body.tema-oscuro input,
+body.tema-oscuro select            { background: #2d3748; color: var(--text-oscuro); border-color: var(--border-oscuro); }
+body.tema-oscuro input::placeholder { color: #718096; }
+body.tema-oscuro .back-btn         { background: var(--primary); color: #fff; }
+body.tema-oscuro .title            { color: var(--primary); }
+body.tema-oscuro .password-requirements,
+body.tema-oscuro small             { color: #94a3b8; }
+body.tema-oscuro .section-divider  { border-color: var(--border-oscuro); }
+body.tema-oscuro .info-row         { border-bottom-color: var(--border-oscuro); }
+body.tema-oscuro .info-label       { color: #94a3b8; }
+body.tema-oscuro .tema-actual      { background: #374151; color: #e2e8f0; }
+
+
+/* ============================================================================
+   3. LAYOUT PRINCIPAL
+   ============================================================================ */
+.container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+
+/* ============================================================================
+   4. HEADER (botón volver)
+   ============================================================================ */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.back-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.back-btn:hover {
+    background: var(--primary-dark) !important;
+    transform: translateX(-3px);
+    color: #fff;
+}
+
+
+/* ============================================================================
+   5. CARDS
+   ============================================================================ */
+.card {
+    padding: 28px;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 22px;
+}
+
+
+/* ============================================================================
+   6. TÍTULOS DE SECCIÓN
+   ============================================================================ */
+.title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 22px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+
+/* ============================================================================
+   7. SECCIÓN PERFIL — avatar y datos
+   ============================================================================ */
+.perfil-info {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.avatar-container { position: relative; flex-shrink: 0; }
+
+.avatar-container img,
+#foto-perfil {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid var(--primary);
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.30);
+    display: block;
+}
+
+.data { flex: 1; min-width: 0; }
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid transparent;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-icon  { color: var(--primary); width: 20px; flex-shrink: 0; margin-top: 2px; }
+.info-label { font-weight: 600; white-space: nowrap; color: #64748b; font-size: 0.85rem; }
+.info-value { font-weight: 500; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
+
+.section-divider {
+    border: none;
+    border-top: 1px solid;
+    margin: 22px 0;
+}
+
+
+/* ============================================================================
+   8. FORMULARIOS
+   ============================================================================ */
+.form-group { margin-bottom: 18px; }
+
+label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    display: block;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    border: 2px solid;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.25s;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+input[type="file"] { padding: 9px 12px; cursor: pointer; font-size: 0.88rem; }
+
+small,
+.password-requirements {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    display: block;
+    margin-top: 5px;
+}
+
+
+/* ============================================================================
+   9. BOTONES
+   ============================================================================ */
+button {
+    padding: 11px 22px;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.93rem;
+    font-weight: 600;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s;
+}
+
+button:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+    transform: translateY(-1px);
+}
+
+button:active  { transform: translateY(0); }
+button:disabled { opacity: 0.65; cursor: not-allowed; transform: none !important; }
+
+.logout {
+    background: var(--danger);
+    width: 100%;
+    justify-content: center;
+}
+
+.logout:hover {
+    background: #c0392b;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35);
+}
+
+
+/* ============================================================================
+   10. VISTA PREVIA DE FOTO
+   ============================================================================ */
+.preview-foto { margin-top: 14px; text-align: center; }
+
+.preview-foto p   { font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+
+.preview-foto img {
+    max-width: 160px;
+    max-height: 160px;
+    border-radius: var(--radius);
+    border: 2px solid var(--primary);
+    object-fit: cover;
+}
+
+
+/* ============================================================================
+   11. BADGE TEMA ACTUAL
+   ============================================================================ */
+.tema-actual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+
+
+/* ============================================================================
+   12. TOASTS
+   ============================================================================ */
+.toast-container-custom {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+    width: calc(100% - 32px);
+}
+
+.toast {
+    min-width: 0;
+    border-radius: 10px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+    border: none !important;
+}
+
+.toast-success { border-left: 4px solid #28a745 !important; }
+.toast-error   { border-left: 4px solid #dc3545 !important; }
+.toast-warning { border-left: 4px solid #ffc107 !important; }
+.toast-info    { border-left: 4px solid #0dcaf0 !important; }
+
+
+/* ============================================================================
+   13. MODAL (cerrar sesión)
+   ============================================================================ */
+.modal-content {
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+
+/* ============================================================================
+   14. ALERTAS (legacy)
+   ============================================================================ */
+.alert {
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert.show    { display: flex; }
+
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+
+/* ============================================================================
+   15. RESPONSIVE
+   ============================================================================ */
+
+/* Tablet */
+@media (max-width: 768px) {
+    .container   { padding: 20px 16px 48px; }
+    .card        { padding: 22px 18px; }
+    .title       { font-size: 1.15rem; margin-bottom: 18px; }
+
+    .perfil-info { flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+
+    .avatar-container img,
+    #foto-perfil { width: 100px; height: 100px; }
+
+    .data        { width: 100%; }
+
+    .info-row    { justify-content: center; flex-wrap: wrap; text-align: left; }
+    .info-label  { min-width: 70px; }
+    .info-value  { word-break: break-word; max-width: 100%; }
+
+    .toast-container-custom { left: 16px; right: 16px; max-width: 100%; width: auto; }
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+    .container   { padding: 14px 12px 40px; }
+    .card        { padding: 18px 14px; border-radius: 10px; }
+    .header      { margin-bottom: 18px; }
+    .back-btn    { padding: 9px 16px; font-size: 0.85rem; }
+    .title       { font-size: 1.05rem; gap: 8px; }
+
+    .avatar-container img,
+    #foto-perfil { width: 88px; height: 88px; border-width: 3px; }
+
+    input,
+    select       { font-size: 16px; padding: 11px 12px; } /* evita zoom en iOS */
+    input[type="file"] { font-size: 14px; }
+
+    button       { width: 100%; justify-content: center; padding: 12px 18px; }
+    label        { font-size: 0.82rem; }
+    .info-row    { font-size: 0.88rem; padding: 8px 0; }
+    .info-value  { font-size: 0.85rem; word-break: break-all; }
+    .tema-actual { font-size: 0.8rem; padding: 6px 12px; }
+
+    .preview-foto img { max-width: 120px; max-height: 120px; }
+}
+
+/* Móvil muy pequeño */
+@media (max-width: 360px) {
+    .card     { padding: 14px 12px; }
+    .title    { font-size: 1rem; }
+    .back-btn { font-size: 0.8rem; padding: 8px 12px; }
+}

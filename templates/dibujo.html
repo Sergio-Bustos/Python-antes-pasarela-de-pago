@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloc de Dibujo | NoteFlow</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/dibujo.css">
+</head>
+<body>
+
+    <!-- Encabezado -->
+    <div class="app-header">
+        <div class="app-titulo">
+            <i class="fas fa-paint-brush"></i>
+            Bloc de Dibujo
+        </div>
+        <!-- El href ya no es directo: JS intercepta si hay cambios sin guardar -->
+        <a href="/notas" class="btn-volver" id="btnVolver">
+            <i class="fas fa-arrow-left"></i> Mis notas
+        </a>
+    </div>
+
+    <!-- Panel principal -->
+    <div class="panel">
+
+        <!-- ── Toolbar ── -->
+        <div class="toolbar">
+
+            <!-- Herramientas -->
+            <div class="tool-group">
+                <span class="tool-label">Herramienta</span>
+                <button class="btn-tool activo" id="btnLapiz" title="Lápiz" onclick="seleccionarHerramienta('lapiz', this)">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn-tool" id="btnBorrador" title="Borrador" onclick="seleccionarHerramienta('borrador', this)">
+                    <i class="fas fa-eraser"></i>
+                </button>
+                <button class="btn-tool" id="btnLinea" title="Línea recta" onclick="seleccionarHerramienta('linea', this)">
+                    <i class="fas fa-slash"></i>
+                </button>
+                <button class="btn-tool" id="btnRectangulo" title="Rectángulo" onclick="seleccionarHerramienta('rectangulo', this)">
+                    <i class="far fa-square"></i>
+                </button>
+                <button class="btn-tool" id="btnCirculo" title="Círculo" onclick="seleccionarHerramienta('circulo', this)">
+                    <i class="far fa-circle"></i>
+                </button>
+            </div>
+
+            <!-- Color -->
+            <div class="tool-group">
+                <span class="tool-label">Color</span>
+                <div class="color-picker-wrap" title="Elige un color">
+                    <input type="color" id="colorPicker" value="#7c4dff">
+                </div>
+                <!-- Paleta rápida -->
+                <div class="paleta-colores" id="paleta">
+                    <div class="color-rapido" style="background:#212121" data-color="#212121" title="Negro"></div>
+                    <div class="color-rapido" style="background:#e53935" data-color="#e53935" title="Rojo"></div>
+                    <div class="color-rapido" style="background:#f57c00" data-color="#f57c00" title="Naranja"></div>
+                    <div class="color-rapido" style="background:#fdd835" data-color="#fdd835" title="Amarillo"></div>
+                    <div class="color-rapido" style="background:#43a047" data-color="#43a047" title="Verde"></div>
+                    <div class="color-rapido" style="background:#1e88e5" data-color="#1e88e5" title="Azul"></div>
+                    <div class="color-rapido seleccionado" style="background:#7c4dff" data-color="#7c4dff" title="Morado"></div>
+                    <div class="color-rapido" style="background:#ffffff;border:1.5px solid #ccc" data-color="#ffffff" title="Blanco"></div>
+                </div>
+            </div>
+
+            <!-- Grosor -->
+            <div class="tool-group">
+                <span class="tool-label">Grosor</span>
+                <div class="grosor-wrap">
+                    <input type="range" id="grosorPincel" min="1" max="40" value="5">
+                    <div class="grosor-preview">
+                        <div class="grosor-punto" id="grosorPunto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="tool-group" style="margin-left:auto; border-right:none;">
+                <button class="btn-accion btn-deshacer" onclick="deshacer()" title="Deshacer (Ctrl+Z)">
+                    <i class="fas fa-undo"></i> Deshacer
+                </button>
+                <button class="btn-accion btn-limpiar" id="btnLimpiar">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+                <button class="btn-accion btn-guardar" id="btnGuardar">
+                    <i class="fas fa-save"></i> Guardar nota
+                </button>
+            </div>
+
+        </div><!-- /toolbar -->
+
+        <!-- ── Canvas ── -->
+        <div class="canvas-wrap">
+            <canvas id="pizarra"></canvas>
+            <div class="canvas-hint" id="canvasHint">
+                <i class="fas fa-paint-brush"></i>
+                <p>Empieza a dibujar aquí...</p>
+            </div>
+        </div>
+
+        <!-- ── Barra inferior ── -->
+        <div class="barra-inferior">
+            <!-- Título -->
+            <input type="text" class="input-titulo" id="inputTitulo"
+                   placeholder="Título de tu nota..." maxlength="100"
+                   style="flex:1.2; min-width:140px;">
+
+            <!-- Descripción -->
+            <input type="text" class="input-titulo" id="inputDescripcion"
+                   placeholder="Descripción breve (opcional)..." maxlength="200"
+                   style="flex:1.8; min-width:160px;">
+
+            <span class="estado-guardado" id="estadoGuardado">
+                <i class="fas fa-check-circle"></i> Guardado
+            </span>
+            <button class="btn-accion btn-guardar" id="btnGuardar2" style="margin-left:auto;">
+                <i class="fas fa-save"></i> Guardar nota
+            </button>
+            <!-- Etiquetas -->
+            <input type="text" class="input-titulo" id="inputEtiquetas"
+                placeholder="Etiquetas: trabajo, ideas, ..." maxlength="200"
+                style="flex:1.5; min-width:140px;">
+        </div>
+
+    </div><!-- /panel -->
+
+    <!-- ── Modal: confirmar salir sin guardar ── -->
+    <div id="modal-salir-backdrop"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9998;"></div>
+    <div id="modal-salir"
+         style="display:none; position:fixed; top:50%; left:50%;
+                transform:translate(-50%,-50%); background:#fff; border-radius:14px;
+                padding:32px 28px; z-index:9999; max-width:380px; width:90%;
+                box-shadow:0 8px 32px rgba(0,0,0,.22); text-align:center;">
+        <div style="font-size:2.2rem; margin-bottom:10px;">⚠️</div>
+        <h3 style="margin:0 0 10px; font-size:1.1rem; color:#212529;">¿Salir sin guardar?</h3>
+        <p style="color:#6c757d; font-size:.93rem; margin-bottom:22px;">
+            Tienes un dibujo sin guardar. Si sales ahora,
+            <strong>se perderá todo el trabajo.</strong>
+        </p>
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button id="btn-salir-cancelar"
+                    style="padding:9px 22px; border-radius:8px; border:1.5px solid #dee2e6;
+                           background:#f8f9fa; cursor:pointer; font-size:.93rem; font-weight:600;">
+                Seguir editando
+            </button>
+            <button id="btn-salir-confirmar"
+                    style="padding:9px 22px; border-radius:8px; border:none;
+                           background:#e74c3c; color:#fff; cursor:pointer;
+                           font-size:.93rem; font-weight:600;">
+                Sí, salir
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-dibujo" id="toastDibujo"></div>
+    <script src="{{ url_for('static', filename='js/dibujo.js') }}"></script>
+</body>
+</html>

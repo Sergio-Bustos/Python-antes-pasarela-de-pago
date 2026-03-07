@@ -1,0 +1,200 @@
+<!DOCTYPE html> <!-- Declara que el documento usa HTML5 -->
+
+<html lang="es"> <!-- Inicia el documento HTML y define idioma español -->
+
+<head> <!-- Inicio de la cabecera (configuración del documento) -->
+
+    <meta charset="UTF-8"> <!-- Permite caracteres especiales como ñ y tildes -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <!-- Hace que el diseño sea responsive en móviles -->
+
+    <title>Registro | NoteFlow</title> 
+    <!-- Título que aparece en la pestaña del navegador -->
+
+    <link rel="stylesheet" href="/static/formulario.css">
+    <!-- Conecta el archivo CSS principal del proyecto -->
+
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <!-- Define el favicon usando Flask para generar la ruta -->
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Importa los estilos del framework Bootstrap desde CDN -->
+
+
+</head> <!-- Fin del head -->
+
+<body> <!-- Inicio del contenido visible -->
+
+    <div class="fondo"></div> 
+    <!-- Capa visual de fondo -->
+
+    <div class="overlay"></div> 
+    <!-- Capa oscura encima del fondo -->
+
+    <div class="toast-container-custom"></div> 
+    <!-- Contenedor donde se insertarán los Toast dinámicamente -->
+
+    <div class="page-wrapper"> 
+    <!-- Contenedor principal de dos columnas -->
+
+        <div class="panel-deco"> 
+        <!-- Panel izquierdo decorativo -->
+
+            <div class="panel-deco-carousel"> 
+            <!-- Contenedor del carrusel -->
+
+                <div class="carrusel"> 
+                <!-- Contenedor animado principal -->
+
+                    <div class="columna_izquierda"> 
+                    <!-- Columna izquierda de imágenes -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen 1 -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen 2 -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen repetida -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen repetida -->
+
+                    </div>
+
+                    <div class="columna_derecha"> 
+                    <!-- Columna derecha -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen -->
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="panel-deco-content"> 
+            <!-- Contenido encima del carrusel -->
+
+                <div class="deco-logo">Note<span>Flow</span></div>
+                <!-- Logo decorativo -->
+
+                <h1>Empieza<br>gratis hoy</h1>
+                <!-- Título principal -->
+
+                <p>Crea tu cuenta en segundos y lleva el control de tus notas, ideas y tareas en un solo lugar.</p>
+                <!-- Texto descriptivo -->
+
+                <ul class="feature-list">
+                <!-- Lista de beneficios -->
+
+                    <li>Sin tarjeta de crédito</li>
+                    <li>Configuración en menos de 1 minuto</li>
+                    <li>Acceso inmediato a todas las funciones</li>
+                    <li>Soporte en español</li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+        <div class="panel-form"> 
+        <!-- Panel derecho -->
+
+            <form class="formulario" action="/procesar-registro" method="POST">
+            <!-- Formulario que envía datos al backend -->
+
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <nav>
+                <!-- Navegación entre login y registro -->
+
+                    <ul class="formulario-ul">
+
+                        <li class="li-formulario">
+                            <a href="/iniciarsesion.html">Iniciar Sesión</a>
+                        </li>
+
+                        <li class="li-formulario">
+                            <a href="/registro.html" class="activo">Registro</a>
+                        </li>
+
+                    </ul>
+
+                </nav>
+
+                <h2 class="h2-registro">CREAR CUENTA</h2>
+
+                <section class="inputs">
+
+                    <div class="input-row">
+
+                        <div class="input-col">
+                            <label>Nombre</label>
+                            <input type="text" name="nombre" placeholder="Tu nombre" autocomplete="given-name" required>
+                        </div>
+
+                        <div class="input-col">
+                            <label>Apellido</label>
+                            <input type="text" name="apellido" placeholder="Tu apellido" autocomplete="family-name" required>
+                        </div>
+
+                    </div>
+
+                    <label>Teléfono</label>
+                    <input type="tel" name="telefono" placeholder="Ej: 3123456789" autocomplete="tel" required>
+
+                    <label>Correo electrónico</label>
+                    <input type="email" name="correo" placeholder="correo@ejemplo.com" autocomplete="email" required>
+
+                    <label>Apodo o alias</label>
+                    <input type="text" name="usuario" placeholder="Ej: Notero123" autocomplete="username" required>
+
+                    <label>Contraseña</label>
+                    <input type="password" name="contraseña" placeholder="Mínimo 6 caracteres"
+                           autocomplete="new-password" minlength="6" maxlength="15" required>
+
+                    <small class="campo-hint">Entre 6 y 15 caracteres</small>
+
+                </section>
+
+                <button type="submit">Crear cuenta</button>
+
+                <p class="registro-link">
+                    ¿Ya tienes cuenta? <a href="/iniciarsesion.html">Iniciar sesión</a>
+                </p>
+                <p>
+                    <a href="javascript:history.back()" class="back-link"> <!-- funcion de javascript de volver a donde estaba-->
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Volver
+                    </a>
+                </p>
+            </form>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Importa el JS de Bootstrap -->
+    <script src="{{ url_for('static', filename='js/registro.js') }}"></script> <!-- Script personalizado del formulario de registro -->
+</body>
+</html>

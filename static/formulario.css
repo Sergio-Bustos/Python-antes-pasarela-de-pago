@@ -1,0 +1,996 @@
+/* ============================================================================
+   formulario.css — NoteFlow
+   Layout de dos columnas: panel izquierdo decorativo + panel derecho formulario
+   Organización:
+     1.  Variables y Reset
+     2.  Body base
+     3.  Layout — page-wrapper, panel-deco, panel-form
+     4.  Carrusel animado (compartido)
+     5.  Formulario base (compartido)
+     6.  Navegación de pestañas (compartida)
+     7.  Campos de entrada (compartidos)
+     8.  Botones (compartidos)
+     9.  Separador, enlaces y textos de pie (compartidos)
+     10. Toasts (compartidos — una sola definición)
+     11. INICIAR SESIÓN — estilos específicos
+     12. REGISTRO — estilos específicos
+     13. OLVIDÉ CONTRASEÑA — estilos específicos
+     14. RESTABLECER CONTRASEÑA — estilos específicos
+     15. CUENTA NO REGISTRADA — sin estilos extra (reutiliza base)
+     16. Responsive
+   ============================================================================ */
+
+
+/* ============================================================================
+   1. VARIABLES Y RESET
+   ============================================================================ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    --purple:      #5452d3;
+    --purple-dark: #3f3db8;
+    --purple-soft: #faedfd;
+    --text-dark:   #1e1d3f;
+    --text-mid:    #555;
+    --text-light:  #666;
+    --border:      #e0e0e0;
+    --input-bg:    #f7f7fc;
+    --white:       #ffffff;
+}
+
+
+/* ============================================================================
+   2. BODY BASE
+   ============================================================================ */
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #2d2b7a 0%, #51368f 50%, #8b5cf6 100%);
+    overflow: hidden;
+}
+
+/* .fondo y .overlay se mantienen en el HTML pero no necesitan estilos — no se renderizan */
+.fondo,
+.overlay { display: none; }
+
+
+/* ============================================================================
+   3. LAYOUT — page-wrapper, panel-deco, panel-form
+   ============================================================================ */
+.page-wrapper {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    width: min(920px, 96vw);
+    min-height: 560px;
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.30),
+        0 4px 16px rgba(84, 82, 211, 0.15);
+    animation: formEntrance 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes formEntrance {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Panel izquierdo decorativo */
+.panel-deco {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(150deg, rgba(45,43,122,0.95) 0%, rgba(84,82,211,0.90) 100%);
+    border-right: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 40px;
+    color: #fff;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.panel-deco-content {
+    position: relative;
+    z-index: 2;
+}
+
+.panel-deco .deco-logo {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    line-height: 1;
+}
+
+.panel-deco .deco-logo span { opacity: 0.55; }
+
+.panel-deco h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+}
+
+.panel-deco p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    opacity: 0.80;
+    max-width: 300px;
+    color: #fff;
+    margin: 0;
+}
+
+.panel-deco .feature-list {
+    list-style: none;
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.panel-deco .feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    opacity: 0.85;
+}
+
+.panel-deco .feature-list li::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.70);
+    flex-shrink: 0;
+}
+
+/* Panel derecho */
+.panel-form {
+    width: 400px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 95vh;
+}
+
+
+/* ============================================================================
+   4. CARRUSEL ANIMADO (compartido en todos los HTML)
+   ============================================================================ */
+.panel-deco-carousel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.carrusel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+}
+
+.columna_izquierda,
+.columna_derecha {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+}
+
+.columna_izquierda img,
+.columna_derecha img {
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    opacity: 0.18;
+    flex-shrink: 0;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
+}
+
+.columna_izquierda { animation: scrollDown 12s linear infinite; }
+.columna_derecha   { animation: scrollUp   12s linear infinite; }
+
+@keyframes scrollDown {
+    from { transform: translateY(-50%); }
+    to   { transform: translateY(0%);   }
+}
+
+@keyframes scrollUp {
+    from { transform: translateY(0%);   }
+    to   { transform: translateY(-50%); }
+}
+
+
+/* ============================================================================
+   5. FORMULARIO BASE (compartido)
+   ============================================================================ */
+.formulario {
+    flex: 1;
+    padding: 36px 36px 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+.formulario-logo {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.logo-text {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--purple);
+    letter-spacing: -0.02em;
+}
+
+.logo-accent { color: var(--purple-dark); }
+
+.h2-registro {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 14px 0 18px;
+    letter-spacing: 0.07em;
+}
+
+.instruccion {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+
+/* ============================================================================
+   6. NAVEGACIÓN DE PESTAÑAS (compartida)
+   ============================================================================ */
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 2px solid #ebebf5;
+    margin-bottom: 16px;
+}
+
+.formulario-ul {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+}
+
+.li-formulario a {
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    padding: 8px 18px 12px;
+    border-radius: 6px 6px 0 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: inline-block;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.li-formulario a:hover {
+    color: var(--purple);
+    background: rgba(84, 82, 211, 0.06);
+}
+
+.li-formulario a.activo {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+}
+
+
+/* ============================================================================
+   7. CAMPOS DE ENTRADA (compartidos)
+   ============================================================================ */
+.inputs {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    display: block;
+    color: var(--text-mid);
+    margin-top: 12px;
+    margin-bottom: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+input {
+    width: 100%;
+    height: 42px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-dark);
+    padding: 0 14px;
+    font-size: 0.93rem;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+input::placeholder { color: #bbb; }
+
+input:focus {
+    border-color: var(--purple);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.10);
+}
+
+.campo-hint {
+    font-size: 0.76rem;
+    color: #aaa;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Wrapper para input con botón de ojo */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper input { padding-right: 42px; }
+
+
+/* ============================================================================
+   8. BOTONES (compartidos)
+   ============================================================================ */
+button[type="submit"] {
+    display: block;
+    width: 100%;
+    height: 46px;
+    background: var(--purple);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.97rem;
+    font-weight: 700;
+    margin-top: 22px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 14px rgba(84, 82, 211, 0.28);
+    transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+}
+
+button[type="submit"]:hover {
+    background: var(--purple-dark);
+    box-shadow: 0 6px 18px rgba(84, 82, 211, 0.38);
+}
+
+button[type="submit"]:active   { transform: scale(0.98); }
+button[type="submit"]:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--white);
+    color: var(--text-dark);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    width: 100%;
+    height: 46px;
+    font-size: 0.93rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.google-btn img { width: 20px; height: 20px; flex-shrink: 0; }
+
+.google-btn:hover {
+    border-color: var(--purple);
+    box-shadow: 0 2px 10px rgba(84, 82, 211, 0.13);
+    background: rgba(84, 82, 211, 0.03);
+}
+
+
+/* ============================================================================
+   9. SEPARADOR, ENLACES Y TEXTOS DE PIE (compartidos)
+   ============================================================================ */
+.separador {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 14px;
+    color: #aaa;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.separador::before,
+.separador::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e5ef;
+}
+
+p {
+    text-align: center;
+    margin-top: 14px;
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+p a {
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+p a:hover { opacity: 0.75; text-decoration: underline; }
+
+.registro-link { margin-top: 18px; }
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: var(--text-light) !important;
+    text-decoration: none;
+    font-weight: 500 !important;
+    transition: opacity 0.2s;
+}
+
+.back-link:hover { color: var(--purple) !important; opacity: 0.70; }
+
+.back-link svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: #aaa;
+}
+
+.security-note svg {
+    width: 13px;
+    height: 13px;
+    stroke: #bbb;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
+}
+
+
+/* ============================================================================
+   10. TOASTS (compartidos — definición única)
+   ============================================================================ */
+.toast-container-custom {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+}
+
+.toast {
+    min-width: 280px;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+    border: none !important;
+    overflow: hidden;
+}
+
+.toast-body {
+    font-size: 0.88rem;
+    color: var(--text-dark);
+    padding: 10px 14px;
+}
+
+.toast-success .toast-header {
+    background-color: #eafaf1;
+    color: #1a7a45;
+    border-bottom: 1px solid #c3f0d4;
+    font-weight: 600;
+}
+
+.toast-error .toast-header {
+    background-color: #fdf0f0;
+    color: #a93226;
+    border-bottom: 1px solid #f5c0bb;
+    font-weight: 600;
+}
+
+.toast-warning .toast-header {
+    background-color: #fffbea;
+    color: #856404;
+    border-bottom: 1px solid #ffe58a;
+    font-weight: 600;
+}
+
+.toast-info .toast-header {
+    background-color: #eef0ff;
+    color: #3d3ab8;
+    border-bottom: 1px solid #c8c7f0;
+    font-weight: 600;
+}
+
+
+/* ============================================================================
+   11. INICIAR SESIÓN — estilos específicos
+   ============================================================================ */
+.forgot-password {
+    text-align: right;
+    margin-top: 7px;
+    margin-bottom: 0;
+}
+
+.forgot-password a {
+    font-size: 0.82rem;
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.forgot-password a:hover { opacity: 0.7; text-decoration: underline; }
+
+
+/* ============================================================================
+   12. REGISTRO — estilos específicos
+   ============================================================================ */
+
+/* Fila nombre + apellido en dos columnas */
+.input-row {
+    display: flex;
+    gap: 12px;
+}
+
+.input-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-col label { margin-top: 12px; }
+
+/* El registro tiene contenido largo: necesita scroll */
+body.scroll-body {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 32px 16px 48px;
+}
+
+body.scroll-body .fondo,
+body.scroll-body .overlay { position: fixed; }
+
+body.scroll-body .page-wrapper  { margin: auto; align-self: center; }
+body.scroll-body .panel-form    { max-height: none; overflow-y: visible; }
+
+
+/* ============================================================================
+   13. OLVIDÉ CONTRASEÑA — estilos específicos
+   ============================================================================ */
+
+/* Ícono decorativo encima del título (sobre/candado/llave) */
+.recovery-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    box-shadow: 0 6px 20px rgba(84, 82, 211, 0.30);
+}
+
+.recovery-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Pasos del proceso en el panel decorativo */
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    opacity: 0.88;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+    margin-top: 1px;
+}
+
+.step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.step-text strong { font-size: 0.88rem; font-weight: 700; color: #fff; }
+.step-text span   { font-size: 0.80rem; color: rgba(255,255,255,0.65); line-height: 1.45; }
+
+
+/* ============================================================================
+   14. RESTABLECER CONTRASEÑA — estilos específicos
+   ============================================================================ */
+
+/* Variantes de paso: completado y activo */
+.step-number.done {
+    background: rgba(39, 174, 96, 0.35);
+    border-color: rgba(39, 174, 96, 0.70);
+}
+
+.step-number.active {
+    background: rgba(255,255,255,0.30);
+    border-color: rgba(255,255,255,0.80);
+}
+
+/* Botón para mostrar/ocultar contraseña */
+.toggle-password {
+    position: absolute;
+    right: 13px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: #bbb;
+    width: auto;
+    height: auto;
+    box-shadow: none;
+    margin-top: 0;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--purple);
+    background: none;
+    box-shadow: none;
+    transform: none;
+}
+
+.toggle-password svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Indicador de fortaleza de contraseña */
+.strength-bar-wrapper {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.strength-bars {
+    display: flex;
+    gap: 4px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 4px;
+    border-radius: 4px;
+    background: #e5e5ef;
+    transition: background 0.3s;
+}
+
+.strength-bar.weak   { background: #e74c3c; }
+.strength-bar.medium { background: #f39c12; }
+.strength-bar.strong { background: #27ae60; }
+
+.strength-label {
+    font-size: 0.74rem;
+    color: #aaa;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: color 0.3s;
+}
+
+.strength-label.weak   { color: #e74c3c; }
+.strength-label.medium { color: #f39c12; }
+.strength-label.strong { color: #27ae60; }
+
+/* Bloque de error (token inválido o expirado) */
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 0 16px;
+    gap: 14px;
+}
+
+.error-state-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.28);
+}
+
+.error-state-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.error-msg {
+    font-size: 0.90rem;
+    color: #c0392b;
+    background: #fdf0f0;
+    border: 1px solid #f5c0bb;
+    border-radius: 10px;
+    padding: 10px 16px;
+    width: 100%;
+}
+
+
+/* ============================================================================
+   15. CUENTA NO REGISTRADA
+   Reutiliza completamente los estilos base. Sin reglas adicionales.
+   ============================================================================ */
+
+
+/* ============================================================================
+   16. RESPONSIVE
+   ============================================================================ */
+
+/* Tablet grande */
+@media screen and (max-width: 860px) {
+    .page-wrapper { width: min(760px, 96vw); }
+    .panel-form   { width: 360px; }
+    .formulario   { padding: 30px 28px 36px; }
+}
+
+/* Tablet: ocultar panel decorativo */
+@media screen and (max-width: 720px) {
+    body {
+        align-items: center;
+        overflow-y: auto;
+        padding: 20px 16px;
+    }
+
+    .panel-deco { display: none; }
+
+    .page-wrapper {
+        width: 100%;
+        max-width: 460px;
+        min-height: unset;
+        border-radius: 22px;
+    }
+
+    .panel-form {
+        width: 100%;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .formulario { padding: 30px 28px 36px; }
+
+    .toast-container-custom { top: 12px; right: 12px; left: 12px; max-width: 100%; }
+    .toast { min-width: unset; width: 100%; }
+}
+
+/* Móvil estándar */
+@media screen and (max-width: 480px) {
+    body            { padding: 16px 12px; }
+    .page-wrapper   { border-radius: 18px; max-width: 100%; }
+    .formulario     { padding: 24px 20px 32px; }
+    .h2-registro    { font-size: 1rem; margin: 10px 0 14px; }
+    .formulario-logo { margin-bottom: 14px; }
+    .logo-text      { font-size: 1.3rem; }
+    .li-formulario a { padding: 8px 14px 12px; font-size: 0.85rem; }
+    input           { height: 44px; font-size: 16px; } /* evita zoom en iOS */
+    button[type="submit"] { height: 48px; font-size: 1rem; margin-top: 18px; }
+    .google-btn     { height: 48px; font-size: 0.9rem; }
+    .separador      { margin: 14px 0 10px; }
+    .registro-link  { margin-top: 14px; }
+    .input-row      { flex-direction: column; gap: 0; }
+    .input-col      { width: 100%; }
+}
+
+/* Móvil muy pequeño */
+@media screen and (max-width: 360px) {
+    .formulario      { padding: 20px 16px 28px; }
+    .li-formulario a { padding: 8px 10px 12px; font-size: 0.80rem; }
+    .h2-registro     { font-size: 0.95rem; letter-spacing: 0.05em; }
+}
+
+/* Landscape móvil */
+@media screen and (max-height: 640px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .page-wrapper { margin: auto; min-height: unset; }
+    .panel-deco   { display: none; }
+
+    .panel-form {
+        width: 100%;
+        max-width: 460px;
+        max-height: none;
+        overflow-y: visible;
+        margin: auto;
+    }
+
+    .formulario { padding: 20px 28px; }
+    label       { margin-top: 9px; }
+    button[type="submit"],
+    .google-btn { height: 42px; }
+}
+
+/* Landscape tablet — mostrar panel deco si hay ancho suficiente */
+@media screen and (min-width: 721px) and (max-height: 640px) and (orientation: landscape) {
+    .panel-deco { display: flex; padding: 28px 32px; }
+    .panel-deco h1 { font-size: 1.3rem; margin-bottom: 10px; }
+    .panel-deco .deco-logo { margin-bottom: 16px; }
+    .panel-deco .feature-list { margin-top: 16px; gap: 8px; }
+}
+
+/* ============================================================================
+   17. VERIFICAR REGISTRO — estilos específicos
+   ============================================================================ */
+
+/* Contenedor de los 6 inputs de código */
+.codigo-inputs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 24px 0;
+}
+
+/* Cada caja de un dígito */
+.codigo-inputs input {
+    width: 52px;
+    height: 62px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-dark);       /* texto visible sobre fondo claro */
+    padding: 0;
+    outline: none;
+    caret-color: transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.codigo-inputs input:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.12);
+    background: var(--white);
+}
+
+.codigo-inputs input.filled {
+    border-color: var(--purple);
+    background: var(--white);
+}
+
+/* Hint del correo */
+.correo-hint {
+    color: var(--text-light);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.correo-hint strong {
+    color: var(--text-dark);
+}
+
+/* Temporizador */
+.timer-wrap {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 8px;
+}
+
+.timer-wrap #timer-count {
+    font-weight: bold;
+    color: var(--purple);
+}
+
+/* Botón reenviar */
+#btn-reenviar {
+    background: none;
+    border: none;
+    color: var(--purple);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+#btn-reenviar:disabled {
+    color: #aaa;
+    cursor: default;
+    text-decoration: none;
+}

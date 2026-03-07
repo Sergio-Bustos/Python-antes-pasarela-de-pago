@@ -1,0 +1,257 @@
+<!DOCTYPE html><!--Declaración de documento HTML5-->
+<html lang="es"><!--Elemento raíz con idioma español-->
+<head><!--Inicio de la sección de metadatos-->
+    <meta charset="UTF-8"><!--Codificación UTF-8 para caracteres especiales-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive para dispositivos móviles-->
+    <title>Restablecer Contraseña | NoteFlow</title><!--Título de la pestaña del navegador-->
+    <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a hoja de estilos CSS para formularios-->
+    <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen-->
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head><!--Cierre del head-->
+<body><!--Inicio del cuerpo del documento-->
+
+    <!-- Fondo de color sólido detrás de toda la página (definido en formulario.css) -->
+    <div class="fondo"></div>
+
+    <!-- Capa semi-transparente encima del fondo para mejorar contraste con el contenido -->
+    <div class="overlay"></div>
+
+    <!-- Contenedor donde se insertan dinámicamente los toasts desde JavaScript -->
+    <div class="toast-container-custom"></div>
+
+    <!-- ===== WRAPPER DE DOS COLUMNAS =====
+         Divide la pantalla en:
+           - Panel izquierdo (.panel-deco): decorativo con carrusel y copy del proceso
+           - Panel derecho  (.panel-form): formulario de nueva contraseña o estado de error
+         En móvil, la columna izquierda se oculta y solo se muestra el panel derecho.
+    -->
+    <div class="page-wrapper">
+
+        <!-- ────────────────────────────────────────────────
+             PANEL IZQUIERDO — Decorativo / Branding
+             Muestra el progreso del proceso de recuperación,
+             resaltando el paso 3 como el actual (activo).
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-deco">
+
+            <!-- Carrusel animado de imágenes de fondo (efecto visual, sin interacción) -->
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
+                    <div class="columna_izquierda">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido de marca que se muestra encima del carrusel (z-index superior) -->
+            <div class="panel-deco-content">
+
+                <div class="deco-logo">Note<span>Flow</span></div>
+
+                <h1>Casi listo,<br>elige tu nueva<br>contraseña</h1>
+                <p>Estás en el último paso. Crea una contraseña segura para proteger tu cuenta.</p>
+
+                <!-- Pasos del proceso — paso 1 y 2 marcados como completados, paso 3 activo -->
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number done">✓</div>
+                        <div class="step-text">
+                            <strong>Correo ingresado</strong>
+                            <span>Solicitaste el enlace de recuperación.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number done">✓</div>
+                        <div class="step-text">
+                            <strong>Enlace verificado</strong>
+                            <span>El enlace es válido y seguro.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number active">3</div>
+                        <div class="step-text">
+                            <strong>Nueva contraseña</strong>
+                            <span>Crea una contraseña de al menos 6 caracteres.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ────────────────────────────────────────────────
+             PANEL DERECHO — Formulario o estado de error
+             Muestra el formulario si el token es válido,
+             o un mensaje de error con enlace de reintento.
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-form">
+
+            {% if error %}<!--Inicio de bloque condicional Jinja2: verifica si hay un error-->
+
+            <!--
+                Estado de error: token inválido o expirado.
+                Se presenta dentro del layout igual que el formulario,
+                manteniendo coherencia visual con el resto de la app.
+            -->
+            <div class="formulario">
+
+                <!-- Logo de NoteFlow -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación de pestañas (mismo nav que en otras páginas) -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                        <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Bloque de error visual -->
+                <div class="error-state">
+                    <div class="error-state-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+
+                    <h2 class="h2-registro">ENLACE INVÁLIDO</h2>
+
+                    <!--Párrafo mostrando mensaje de error-->
+                    <p class="error-msg">{{ error }}</p><!--Mensaje de error desde el servidor-->
+
+                    <p>El enlace puede haber expirado o ya fue utilizado.</p>
+
+                    <!--Enlace para solicitar nuevo token de recuperación-->
+                    <a href="/olvide-contrasena" class="back-link" style="display:flex;align-items:center;gap:5px;margin-top:6px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Solicitar un nuevo enlace
+                    </a>
+                </div>
+            </div>
+
+            {% elif token %}<!--Else-if: si no hay error pero sí existe token válido-->
+
+            <!--
+                Formulario de restablecimiento de contraseña.
+                - id="form-restablecer": permite seleccionarlo fácilmente desde JavaScript.
+                - action="/procesar-restablecer-contrasena": destino nativo (fallback sin JS).
+                - method="POST": las contraseñas nunca viajan en la URL por seguridad.
+                El envío real se intercepta con JavaScript (fetch).
+            -->
+            <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer">
+
+                <!-- Logo de NoteFlow -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación de pestañas -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                        <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Ícono decorativo de llave -->
+                <div class="recovery-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                </div>
+
+                <h2 class="h2-registro">NUEVA CONTRASEÑA</h2>
+
+                <!--Instrucciones sobre requisitos de contraseña-->
+                <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p>
+
+                <!--Campo oculto que contiene el token de recuperación desde el servidor-->
+                <input type="hidden" name="token" value="{{ token }}">
+
+                <section class="inputs"><!--Sección para agrupar campos de entrada-->
+
+                    <!--Etiqueta para primer campo de contraseña-->
+                    <label>Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        <!--Campo password con validación mínima de 6 caracteres, requerido-->
+                        <input type="password"
+                               name="nueva_contrasena"
+                               id="nueva_contrasena"
+                               placeholder="Mínimo 6 caracteres"
+                               required
+                               minlength="6"
+                               autocomplete="new-password">
+                        <!-- Botón para mostrar/ocultar contraseña -->
+                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="nueva_contrasena">
+                            <svg class="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Indicador de fortaleza de contraseña -->
+                    <div class="strength-bar-wrapper" id="strength-wrapper" style="display:none;">
+                        <div class="strength-bars">
+                            <div class="strength-bar" id="bar1"></div>
+                            <div class="strength-bar" id="bar2"></div>
+                            <div class="strength-bar" id="bar3"></div>
+                        </div>
+                        <span class="strength-label" id="strength-label">Contraseña débil</span>
+                    </div>
+
+                    <!--Etiqueta para campo de confirmación-->
+                    <label>Confirmar Contraseña</label>
+                    <div class="input-wrapper">
+                        <!--Campo password para confirmar, misma validación-->
+                        <input type="password"
+                               name="confirmar_contrasena"
+                               id="confirmar_contrasena"
+                               placeholder="Repite tu contraseña"
+                               required
+                               minlength="6"
+                               autocomplete="new-password">
+                        <!-- Botón para mostrar/ocultar confirmación -->
+                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="confirmar_contrasena">
+                            <svg class="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
+                    </div>
+
+                </section><!--Cierre de la sección inputs-->
+
+                <!--Botón de envío del formulario-->
+                <button type="submit">Restablecer Contraseña</button>
+
+                <!-- Aviso de seguridad debajo del botón -->
+                <p class="security-note">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Conexión cifrada · Tu contraseña se guarda de forma segura
+                </p>
+
+            </form><!--Cierre del formulario-->
+
+            {% endif %}<!--Cierre del bloque condicional Jinja2-->
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle (incluye Popper.js) — necesario para los Toasts de Bootstrap -->
+    <!-- Se carga al final del body para no bloquear el renderizado del HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/restablecer_contraseña.js') }}"></script> <!-- Script personalizado del formulario de restablecimiento -->
+</body><!--Cierre del body-->
+</html><!--Cierre del documento HTML-->

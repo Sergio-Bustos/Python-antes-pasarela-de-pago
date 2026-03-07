@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papelera | NoteFlow</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='papelera.css') }}">
+</head>
+<body>
+
+<!-- Toast container -->
+<div class="toast-container-custom" id="toast-container"></div>
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+    <div class="logo">NoteFlow</div>
+    <ul class="menu">
+        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li class="separator"></li>
+        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
+        <li><a href="/papelera" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li class="separator"></li>
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+    </ul>
+    <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+    <!-- Header -->
+    <header>
+        <div class="bienvenida">
+            <h2>
+                <i class="fas fa-trash-alt" style="color:#e74c3c;"></i>
+                Papelera
+            </h2>
+        </div>
+        <a href="{{ url_for('perfil') }}" class="usuario-info">
+            {% if usuario.Foto %}
+                <img src="{{ url_for('static', filename=usuario.Foto) }}" alt="Foto de perfil">
+            {% else %}
+                <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
+            {% endif %}
+            <span>{{ usuario.Nombres }}</span>
+            <i class="fas fa-chevron-down profile-dropdown-icon"></i>
+        </a>
+    </header>
+
+    <!-- Aviso eliminación automática -->
+    <div class="aviso-papelera">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>
+            Las notas en la papelera se eliminan <strong>automáticamente a los 30 días</strong>
+            de haber sido eliminadas. Puedes restaurarlas o eliminarlas definitivamente en cualquier momento.
+        </span>
+    </div>
+
+    <!-- Cabecera sección -->
+    <div class="papelera-header">
+        <h2>
+            <i class="fas fa-trash-alt"></i>
+            Notas eliminadas
+            <span class="badge-total" id="badge-total">{{ notas_papelera | length }}</span>
+        </h2>
+        <div class="barra-acciones">
+            {% if notas_papelera %}
+            <button class="btn-vaciar-todo" id="btn-vaciar-todo" onclick="confirmarVaciarTodo()">
+                <i class="fas fa-bomb"></i> Vaciar papelera
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Lista de notas ── -->
+    <div id="lista-papelera">
+
+        {% if notas_papelera %}
+            {% for nota in notas_papelera %}
+            <div class="nota-papelera" id="nota-{{ nota.ID_Nota }}" data-id="{{ nota.ID_Nota }}">
+
+                <!-- Ícono según formato -->
+                <div class="icono-nota">
+                    {% if nota.Formato and nota.Formato | lower == 'imagen' %}
+                        <i class="fas fa-image" style="color:#27ae60;"></i>
+                    {% elif nota.Formato and nota.Formato | lower == 'audio' %}
+                        <i class="fas fa-microphone" style="color:#e74c3c;"></i>
+                    {% elif nota.Formato and nota.Formato | lower == 'video' %}
+                        <i class="fas fa-video" style="color:#2980b9;"></i>
+                    {% elif nota.Formato and nota.Formato | lower == 'mixta' %}
+                        <i class="fas fa-layer-group" style="color:#8e44ad;"></i>
+                    {% elif nota.Formato and nota.Formato | lower == 'dibujo' %}
+                        <i class="fas fa-paint-brush" style="color:#f39c12;"></i>
+                    {% else %}
+                        <i class="fas fa-file-alt" style="color:#5452d3;"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Información de la nota -->
+                <div class="nota-info">
+                    <div class="nota-titulo">
+                        {{ nota.Titulo if nota.Titulo else 'Sin título' }}
+                    </div>
+
+                    {% if nota.Descripcion %}
+                    <div class="nota-descripcion">
+                        {{ nota.Descripcion | truncate(160, True) }}
+                    </div>
+                    {% endif %}
+
+                    <div class="nota-meta">
+
+                        <!-- Formato -->
+                        {% if nota.Formato %}
+                        <span class="formato-badge">
+                            <i class="fas fa-file-code"></i> {{ nota.Formato | capitalize }}
+                        </span>
+                        {% endif %}
+
+                        <!-- Fecha de creación -->
+                        {% if nota.Fecha_decreacion %}
+                        <span>
+                            <i class="fas fa-calendar-plus"></i>
+                            Creada: {{ nota.Fecha_decreacion.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% endif %}
+
+                        <!-- Fecha en papelera y días restantes -->
+                        {% if nota.Fecha_deedicion %}
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                En papelera desde: {{ nota.Fecha_deedicion.strftime('%d/%m/%Y') }}
+                            </span>
+
+                            {% set fecha_ed = nota.Fecha_deedicion.date() if nota.Fecha_deedicion.__class__.__name__ == 'datetime' else nota.Fecha_deedicion %}
+                            {% if fecha_ed %}
+                                {% set dias_en_papelera = (now.date() - fecha_ed).days %}
+                                {% set dias_en_papelera = [dias_en_papelera, 0] | max %}
+                                {% set dias_restantes   = [30 - dias_en_papelera, 0] | max %}
+
+                                {% if dias_restantes <= 5 %}
+                                    <span class="dias-restantes urgente">
+                                        <i class="fas fa-fire"></i>
+                                        {{ dias_en_papelera }} día{{ 's' if dias_en_papelera != 1 else '' }} en papelera
+                                        &middot; ¡Solo {{ dias_restantes }} día{{ 's' if dias_restantes != 1 else '' }} para eliminarse!
+                                    </span>
+                                {% elif dias_restantes <= 10 %}
+                                    <span class="dias-restantes advertencia">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ dias_en_papelera }} día{{ 's' if dias_en_papelera != 1 else '' }} en papelera
+                                        &middot; {{ dias_restantes }} días para eliminarse
+                                    </span>
+                                {% else %}
+                                    <span class="dias-restantes normal">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        {{ dias_en_papelera }} día{{ 's' if dias_en_papelera != 1 else '' }} en papelera
+                                        &middot; {{ dias_restantes }} días para eliminarse
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+
+                    </div><!-- /nota-meta -->
+                </div><!-- /nota-info -->
+
+                <!-- Botones de acción -->
+                <div class="nota-acciones">
+                    <button class="btn-restaurar"
+                            data-id="{{ nota.ID_Nota }}"
+                            data-titulo="{{ nota.Titulo if nota.Titulo else 'Sin título' }}"
+                            onclick="confirmarRestaurar(this)">
+                        <i class="fas fa-undo"></i> Restaurar
+                    </button>
+                    <button class="btn-eliminar-def"
+                            data-id="{{ nota.ID_Nota }}"
+                            data-titulo="{{ nota.Titulo if nota.Titulo else 'Sin título' }}"
+                            onclick="confirmarEliminar(this)">
+                        <i class="fas fa-times"></i> Eliminar
+                    </button>
+                </div>
+
+            </div><!-- /nota-papelera -->
+            {% endfor %}
+
+        {% else %}
+            <div class="papelera-vacia" id="papelera-vacia">
+                <i class="fas fa-trash-alt"></i>
+                <p>La papelera está vacía. ¡Todo en orden!</p>
+            </div>
+        {% endif %}
+
+    </div><!-- /lista-papelera -->
+
+</div><!-- /main -->
+
+
+<!-- ============================================================
+     MODAL: Confirmar restaurar
+============================================================ -->
+<div class="modal fade" id="modalRestaurar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: 2px solid #2ecc71;">
+                <h5 class="modal-title" style="color:#27ae60; font-weight:700;">
+                    <i class="fas fa-undo"></i> Restaurar nota
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+                ¿Deseas restaurar la nota <strong id="modal-restaurar-titulo"></strong>?
+                Volverá a aparecer en tu lista de notas activas.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <button type="button" id="btn-confirmar-restaurar"
+                        class="btn" style="background:#2ecc71; color:#fff; font-weight:600;">
+                    <i class="fas fa-undo"></i> Sí, restaurar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: Confirmar eliminar definitivamente
+============================================================ -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: 2px solid #e74c3c;">
+                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+                    <i class="fas fa-exclamation-triangle"></i> Eliminar definitivamente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+                ¿Estás seguro de que deseas eliminar <strong id="modal-eliminar-titulo"></strong> de forma permanente?
+                <br><br>
+                <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer. Se eliminarán también todos los archivos adjuntos.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar"
+                        class="btn btn-danger" style="color:#fff !important; font-weight:600;">
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar definitivamente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: Vaciar toda la papelera
+============================================================ -->
+<div class="modal fade" id="modalVaciar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: 2px solid #e74c3c;">
+                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+                    <i class="fas fa-bomb"></i> Vaciar papelera
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+                ¿Estás seguro de que deseas eliminar <strong>todas las notas</strong> de la papelera de forma permanente?
+                <br><br>
+                <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <button type="button" id="btn-confirmar-vaciar"
+                        class="btn btn-danger" style="color:#fff !important; font-weight:600;"
+                        onclick="vaciarPapelera()">
+                    <i class="fas fa-bomb"></i> Sí, vaciar todo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: Cerrar sesión
+============================================================ -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sign-out-alt"></i> Confirmar cierre de sesión
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">¿Estás seguro de que quieres cerrar sesión?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
+                   style="color:#fff !important;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: Elegir formato de nota
+============================================================ -->
+<div class="formato-backdrop" id="formato-backdrop" onclick="cerrarFormato()"></div>
+<div class="formato-modal" id="formato-modal">
+    <p class="formato-titulo">¿Qué tipo de nota quieres crear?</p>
+    <div class="formato-grid">
+        <a href="/crear-nota-texto" class="formato-opcion">
+            <i class="fas fa-align-left" style="color:#5452d3"></i><span>Texto</span>
+        </a>
+        <a href="/crear-nota-imagen" class="formato-opcion">
+            <i class="fas fa-image" style="color:#27ae60"></i><span>Imagen</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-microphone" style="color:#e74c3c"></i><span>Audio</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-video" style="color:#2980b9"></i><span>Video</span>
+        </a>
+        <a href="/bloc-dibujo" class="formato-opcion">
+            <i class="fas fa-paint-brush" style="color:#f39c12"></i><span>Dibujo</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-layer-group" style="color:#8e44ad"></i><span>Mixta</span>
+        </a>
+    </div>
+    <button class="formato-cerrar" onclick="cerrarFormato()">Cancelar</button>
+</div>
+
+
+<!-- ============================================================
+     SCRIPTS
+============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script src="{{ url_for('static', filename='js/papelera.js') }}"></script>
+
+</body>
+</html>

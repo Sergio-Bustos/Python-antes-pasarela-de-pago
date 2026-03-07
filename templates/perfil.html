@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil | NoteFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/icon" href="../static/logocircular.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/perfil.css">
+</head>
+<body>
+
+<!-- Contenedor de Toasts -->
+<div class="toast-container-custom"></div>
+
+<div class="container">
+    <div class="header">
+        <a href="/dashboard" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+
+    <!-- ── INFORMACIÓN DEL PERFIL ── -->
+    <div class="card">
+        <div class="title">
+            <i class="fas fa-user-circle"></i>
+            Información del Perfil
+        </div>
+
+        <div class="perfil-info">
+            <div class="avatar-container">
+                <img id="foto-perfil"
+                     src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}"
+                     alt="Foto de perfil">
+            </div>
+
+            <div class="data">
+                <p><i class="fas fa-user"></i>     <strong>Nombre:</strong>   {{ usuario.Nombres }} {{ usuario.Apellidos }}</p>
+                <p><i class="fas fa-envelope"></i> <strong>Correo:</strong>   {{ usuario.Correo }}</p>
+                <p><i class="fas fa-at"></i>       <strong>Usuario:</strong>  {{ usuario.Usuario }}</p>
+                <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
+
+                <!-- Botón eliminar foto — solo visible si el usuario tiene foto propia -->
+                {% if usuario.Foto and usuario.Foto not in ['img/default_profile.png', 'uploads/profile/default_profile.png', '', none] %}
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" onclick="confirmarEliminarFoto()">
+                    <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
+                </button>
+                {% else %}
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" style="display:none;" onclick="confirmarEliminarFoto()">
+                    <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── SUBIR FOTO DE PERFIL ── -->
+        <form id="form-foto" enctype="multipart/form-data"
+              style="margin-top:30px; border-top:1px solid var(--border-claro); padding-top:20px;">
+            <div class="form-group">
+                <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label>
+                <input type="file" name="foto" id="input-foto"
+                       accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+                <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small>
+            </div>
+            <div class="preview-foto" id="preview-foto" style="display:none;">
+                <p><strong>Vista previa:</strong></p>
+                <img id="preview-img" src="" alt="Vista previa">
+            </div>
+            <button type="submit">
+                <i class="fas fa-upload"></i> Cargar nueva imagen
+            </button>
+        </form>
+    </div>
+
+    <!-- ── PREFERENCIAS DE APARIENCIA ── -->
+    <div class="card">
+        <div class="title">
+            <i class="fas fa-palette"></i>
+            Preferencias de Apariencia
+        </div>
+
+        <div class="tema-actual" id="tema-actual-badge">
+            <i class="fas fa-sun" id="tema-icon"></i>
+            <span id="tema-texto">Tema Claro Activo</span>
+        </div>
+
+        <form id="form-tema">
+            <div class="form-group">
+                <label><i class="fas fa-adjust"></i> Cambiar tema del sistema</label>
+                <select name="tema" id="select-tema">
+                    <option value="claro"  {% if usuario.Color_principal == "Blanco" %}selected{% endif %}>☀️ Modo Claro</option>
+                    <option value="oscuro" {% if usuario.Color_principal == "Negro"  %}selected{% endif %}>🌙 Modo Oscuro</option>
+                </select>
+            </div>
+            <button type="submit">
+                <i class="fas fa-save"></i> Aplicar Tema
+            </button>
+        </form>
+    </div>
+
+    <!-- ── CAMBIAR CONTRASEÑA ── -->
+    <div class="card">
+        <div class="title">
+            <i class="fas fa-lock"></i>
+            Cambiar Contraseña
+        </div>
+
+        <form id="form-password">
+            <div class="form-group">
+                <label><i class="fas fa-key"></i> Contraseña actual</label>
+                <input type="password" name="password_actual" id="password_actual" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Nueva contraseña</label>
+                <input type="password" name="password_nueva" id="password_nueva"
+                       minlength="6" maxlength="15" required>
+                <small class="password-requirements">Entre 6 y 15 caracteres</small>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-check-circle"></i> Confirmar nueva contraseña</label>
+                <input type="password" name="password_confirmacion" id="password_confirmacion"
+                       minlength="6" maxlength="15" required>
+            </div>
+            <button type="submit">
+                <i class="fas fa-sync-alt"></i> Actualizar Contraseña
+            </button>
+        </form>
+    </div>
+
+    <!-- ── CERRAR SESIÓN ── -->
+    <div class="card">
+        <button class="logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </button>
+    </div>
+
+</div><!-- /container -->
+
+
+<!-- ── MODAL: Confirmar eliminar foto ── -->
+<div class="modal fade" id="modalEliminarFoto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom:2px solid #e74c3c;">
+                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+                    <i class="fas fa-exclamation-triangle"></i> Eliminar foto de perfil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+                ¿Estás seguro de que deseas eliminar tu foto de perfil?
+                <br><br>
+                <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Se reemplazará por la imagen predeterminada. Esta acción no se puede deshacer.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-foto"
+                        style="color:#fff !important; font-weight:600;">
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar foto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ── MODAL: Confirmar cerrar sesión ── -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:#f8f9fa; border-bottom:2px solid #dee2e6;">
+                <h5 class="modal-title" style="color:#212529; font-weight:600;">
+                    <i class="fas fa-sign-out-alt"></i> Confirmar Cierre de Sesión
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="color:#495057; font-size:16px; padding:20px;">
+                ¿Estás seguro de que deseas cerrar sesión en NoteFlow?
+            </div>
+            <div class="modal-footer" style="background-color:#f8f9fa; border-top:1px solid #dee2e6;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff; font-weight:500;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <a href="/perfil/cerrar-sesion" class="btn btn-danger"
+                   style="color:#fff; font-weight:500;">
+                    <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
+</body>
+</html>

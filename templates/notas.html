@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Notas | NoteFlow</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notas.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo">NoteFlow</div>
+    <ul class="menu">
+        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li class="separator"></li>
+        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li class="separator"></li>
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+    </ul>
+    <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+    <header>
+        <div class="bienvenida">
+            <h2><i class="fas fa-sticky-note" style="color:var(--color-principal);"></i> Mis Notas</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn-busqueda-inteligente" onclick="abrirModal()">
+                <i class="fas fa-search"></i> Realiza la busqueda
+            </button>
+            <a href="{{ url_for('perfil') }}" class="usuario-info">
+                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto">
+                <span>{{ usuario.Nombres }}</span>
+                <i class="fas fa-chevron-down profile-dropdown-icon"></i>
+            </a>
+        </div>
+    </header>
+
+
+    <!-- ÁREA DE RESULTADOS -->
+    <div id="area-resultados">
+        <div class="resultados-cabecera">
+            <div class="resultados-titulo">
+                <i id="icono-res" class="fas fa-file-alt"></i>
+                <span id="label-res">Resultados</span>
+                <span class="badge-count" id="badge-res">0</span>
+            </div>
+            <button class="btn-nueva-busqueda" onclick="abrirModal()">
+                <i class="fas fa-search"></i> Nueva búsqueda
+            </button>
+        </div>
+        <div class="sin-resultados" id="sin-resultados">
+            <i class="fas fa-search-minus"></i>
+            <p>No se encontraron resultados para la búsqueda.</p>
+        </div>
+        <div id="resultados-notas"></div>
+        <div id="resultados-carpetas"></div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: BÚSQUEDA INTELIGENTE
+     ============================================================ -->
+<div class="modal-backdrop-busqueda" id="backdrop" onclick="clickBackdrop(event)">
+<div class="modal-busqueda">
+
+    <!-- Header -->
+    <div class="modal-header-busqueda">
+        <h3><i class="fas fa-search"></i> Búsqueda inteligente</h3>
+        <button class="btn-cerrar-modal" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- PASO 1: ¿Qué deseas buscar? -->
+    <div class="paso-seleccion" id="paso-seleccion">
+        <p class="subtitulo">¿Qué deseas buscar hoy?</p>
+        <div class="tipo-opciones">
+            <div class="tipo-opcion notas" onclick="elegirTipo('notas')">
+                <span class="tipo-icono"><i class="fas fa-file-alt"></i></span>
+                <h4>Buscar Notas</h4>
+                <p>Busca por título, contenido, etiquetas, formato o fechas.</p>
+            </div>
+            <div class="tipo-opcion carpetas" onclick="elegirTipo('carpetas')">
+                <span class="tipo-icono"><i class="fas fa-folder-open"></i></span>
+                <h4>Buscar Carpetas</h4>
+                <p>Encuentra carpetas por nombre con coincidencias parciales.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 2A: NOTAS -->
+    <div class="panel-busqueda" id="panel-notas">
+        <div class="panel-subheader">
+            <button class="btn-volver" onclick="volver()"><i class="fas fa-arrow-left"></i></button>
+            <span class="tipo-badge notas"><i class="fas fa-file-alt"></i> Notas</span>
+            <span class="panel-hint">Completa uno o más filtros</span>
+        </div>
+
+        <div class="input-wrapper" style="padding-top:18px;">
+            <i class="fas fa-search"></i>
+            <input class="input-busqueda" id="nota-texto" type="text"
+                   placeholder="Buscar por título o contenido..." autocomplete="off">
+        </div>
+
+        <div class="filtros-seccion" style="padding-top:18px;">
+            <div class="filtros-label"><i class="fas fa-sliders-h"></i> Filtros avanzados</div>
+
+            <div class="filtros-grid col2" style="margin-bottom:12px;">
+                <div class="filtro-item">
+                    <label><i class="fas fa-folder"></i> Carpeta</label>
+                    <select id="nota-carpeta">
+                        <option value="">Todas las carpetas</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label><i class="fas fa-file-code"></i> Formato</label>
+                    <select id="nota-formato">
+                        <option value="">Todos los formatos</option>
+                        <option value="texto">Texto</option>
+                        <option value="imagen">Imagen</option>
+                        <option value="audio">Audio</option>
+                        <option value="video">Video</option>
+                        <option value="mixta">Mixta</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filtros-grid col2" style="margin-bottom:14px;">
+                <div class="filtro-item">
+                    <label><i class="fas fa-calendar-plus"></i> Creación (desde)</label>
+                    <input type="date" id="nota-fecha-desde">
+                </div>
+                <div class="filtro-item">
+                    <label><i class="fas fa-calendar-check"></i> Edición (hasta)</label>
+                    <input type="date" id="nota-fecha-hasta">
+                </div>
+            </div>
+
+            <!-- ---- FIX 3: Etiquetas con buscador + personalizadas ---- -->
+            <div class="filtro-item" style="margin-bottom:12px;">
+                <label><i class="fas fa-tags"></i> Etiquetas</label>
+
+                <!-- Buscador de etiquetas -->
+                <div class="etiquetas-buscador">
+                    <input type="text" id="etiqueta-buscar"
+                           placeholder="Buscar o crear etiqueta..." autocomplete="off"
+                           oninput="filtrarEtiquetas(this.value)">
+                    <i class="fas fa-search icono-busq"></i>
+                </div>
+
+                <!-- Hint para crear etiqueta personalizada -->
+                <div class="etiquetas-nueva-hint" id="hint-nueva-etiqueta"
+                     onclick="agregarEtiquetaPersonalizada()">
+                    <i class="fas fa-plus-circle"></i>
+                    <span id="hint-nueva-texto">Agregar como etiqueta personalizada</span>
+                </div>
+
+                <!-- Chips de etiquetas -->
+                <div class="etiquetas-wrap" id="chips-etiquetas">
+                    <span class="etiqueta-chip" data-valor="trabajo"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Trabajo</span>
+                    <span class="etiqueta-chip" data-valor="personal" onclick="toggleTag(this)"><i class="fas fa-check"></i> Personal</span>
+                    <span class="etiqueta-chip" data-valor="urgente"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Urgente</span>
+                    <span class="etiqueta-chip" data-valor="ideas"    onclick="toggleTag(this)"><i class="fas fa-check"></i> Ideas</span>
+                    <span class="etiqueta-chip" data-valor="estudio"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Estudio</span>
+                    <span class="etiqueta-chip" data-valor="proyecto" onclick="toggleTag(this)"><i class="fas fa-check"></i> Proyecto</span>
+                </div>
+            </div>
+
+            <div class="filtro-item">
+                <label><i class="fas fa-sort-amount-down"></i> Ordenar por</label>
+                <select id="nota-orden">
+                    <option value="reciente">Modificación más reciente</option>
+                    <option value="antiguo">Modificación más antigua</option>
+                    <option value="az">Nombre A → Z</option>
+                    <option value="za">Nombre Z → A</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filtros-activos" id="filtros-activos-notas">
+            <span class="fa-label">Activos:</span>
+            <div id="chips-activos"></div>
+            <button class="btn-limpiar-all" onclick="limpiarNotas()"><i class="fas fa-times"></i> Limpiar filtros</button>
+        </div>
+
+        <div class="panel-footer">
+            <button class="btn-limpiar" onclick="limpiarNotas()"><i class="fas fa-undo"></i> Limpiar</button>
+            <button class="btn-buscar"  onclick="buscarNotas()"><i class="fas fa-search"></i> Buscar notas</button>
+        </div>
+    </div>
+
+    <!-- PASO 2B: CARPETAS -->
+    <div class="panel-busqueda" id="panel-carpetas">
+        <div class="panel-subheader">
+            <button class="btn-volver" onclick="volver()"><i class="fas fa-arrow-left"></i></button>
+            <span class="tipo-badge carpetas"><i class="fas fa-folder"></i> Carpetas</span>
+            <span class="panel-hint">Coincidencias parciales</span>
+        </div>
+
+        <div class="input-wrapper" style="padding-top:18px;padding-bottom:4px;">
+            <i class="fas fa-search"></i>
+            <input class="input-busqueda" id="carpeta-texto" type="text"
+                   placeholder="Ej: Tr → Trabajo, Transcripciones..." autocomplete="off">
+        </div>
+
+        <div class="filtros-seccion" style="padding-top:16px;">
+            <div class="filtros-label"><i class="fas fa-sliders-h"></i> Ordenar resultados</div>
+            <div class="filtros-grid col2">
+                <div class="filtro-item">
+                    <label><i class="fas fa-sort-amount-down"></i> Ordenar por</label>
+                    <select id="carpeta-orden">
+                        <option value="reciente">Edición más reciente</option>
+                        <option value="antiguo">Edición más antigua</option>
+                        <option value="creacion_desc">Creación más reciente</option>
+                        <option value="creacion_asc">Creación más antigua</option>
+                        <option value="az">Nombre A → Z</option>
+                        <option value="za">Nombre Z → A</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label><i class="fas fa-sticky-note"></i> Notas mínimas</label>
+                    <select id="carpeta-min-notas">
+                        <option value="">Sin restricción</option>
+                        <option value="1">Al menos 1 nota</option>
+                        <option value="5">Al menos 5 notas</option>
+                        <option value="10">Al menos 10 notas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-footer">
+            <button class="btn-limpiar" onclick="limpiarCarpetas()"><i class="fas fa-undo"></i> Limpiar</button>
+            <button class="btn-buscar carpetas" onclick="buscarCarpetas()"><i class="fas fa-search"></i> Buscar carpetas</button>
+        </div>
+    </div>
+
+</div><!-- /modal-busqueda -->
+</div><!-- /backdrop -->
+
+
+<!-- ============================================================
+     FIX 2: Modal cerrar sesión — botones con colores correctos
+     ============================================================ -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-sign-out-alt"></i> Confirmar cierre de sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">¿Estás seguro de que quieres cerrar sesión?</div>
+            <div class="modal-footer">
+                <!-- Cancelar: fondo gris, letra blanca (Bootstrap .btn-secondary) -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <!-- Cerrar sesión: fondo rojo, letra blanca -->
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
+                   style="color:#fff !important;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+<!-- MODAL ELEGIR FORMATO -->
+<div class="formato-backdrop" id="formato-backdrop" onclick="cerrarFormato()"></div>
+<div class="formato-modal" id="formato-modal">
+    <p class="formato-titulo">¿Qué tipo de nota quieres crear?</p>
+    <div class="formato-grid">
+        <a href="/crear-nota-texto" class="formato-opcion">
+            <i class="fas fa-align-left" style="color:#5452d3"></i>
+            <span>Texto</span>
+        </a>
+        <a href="/crear-nota-imagen" class="formato-opcion">
+            <i class="fas fa-image" style="color:#27ae60"></i>
+            <span>Imagen</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-microphone" style="color:#e74c3c"></i>
+            <span>Audio</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-video" style="color:#2980b9"></i>
+            <span>Video</span>
+        </a>
+        <a href="/bloc-dibujo" class="formato-opcion">
+            <i class="fas fa-paint-brush" style="color:#f39c12"></i>
+            <span>Dibujo</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-layer-group" style="color:#8e44ad"></i>
+            <span>Mixta</span>
+        </a>
+    </div>
+    <button class="formato-cerrar" onclick="cerrarFormato()">Cancelar</button>
+</div>
+
+
+<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script src="{{ url_for('static', filename='js/notas.js') }}"></script>
+
+</body>
+</html>

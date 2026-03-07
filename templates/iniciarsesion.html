@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--
+    Página: Iniciar Sesión
+    Proyecto: NoteFlow
+    Propósito: Formulario de autenticación de usuarios. Permite el ingreso mediante
+               apodo/contraseña o a través de Google OAuth. Incluye un panel
+               decorativo izquierdo con carrusel animado y el formulario en el panel derecho.
+    Backend: Envía los datos vía fetch (AJAX) a /procesar-login (POST).
+             Espera una respuesta JSON con { success, redirect } o { error }.
+    Rutas relacionadas:
+        POST /procesar-login   → Valida credenciales y retorna JSON
+        GET  /google/login     → Inicia flujo OAuth con Google
+        GET  /olvide-contrasena → Página de recuperación de contraseña
+        GET  /registro.html    → Página de creación de cuenta
+-->
+<html lang="es">
+<head>
+    <meta charset="UTF-8"> <!-- Codificación UTF-8 para soporte de tildes y ñ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Diseño responsivo en móviles -->
+    <title>Iniciar Sesión | NoteFlow</title>
+
+    <!-- Hoja de estilos principal del proyecto: layout de dos columnas, carrusel, formulario -->
+    <link rel="stylesheet" href="/static/formulario.css">
+
+    <!-- Favicon: ícono circular del logo de NoteFlow que aparece en la pestaña del navegador -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+
+    <!-- Bootstrap 5 CSS — Framework para alertas, toasts, botones y utilidades responsive -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Fondo de color sólido detrás de toda la página (definido en formulario.css) -->
+    <div class="fondo"></div>
+
+    <!-- Capa semi-transparente encima del fondo para mejorar contraste con el contenido -->
+    <div class="overlay"></div>
+
+    <!-- ===== CONTENEDOR DE TOASTS (notificaciones flotantes) =====
+         Los toasts se insertan aquí dinámicamente desde JavaScript.
+         Se posiciona con CSS en la esquina de la pantalla (ej: arriba a la derecha).
+    -->
+    <div class="toast-container-custom"></div>
+
+    <!-- ===== WRAPPER DE DOS COLUMNAS =====
+         Divide la pantalla en:
+           - Panel izquierdo (.panel-deco): decorativo con carrusel y copy de marca
+           - Panel derecho  (.panel-form): formulario de inicio de sesión
+         En móvil, la columna izquierda se oculta y solo se muestra el formulario.
+    -->
+    <div class="page-wrapper">
+
+        <!-- ────────────────────────────────────────────────
+             PANEL IZQUIERDO — Decorativo / Branding
+             Contiene un carrusel de fondo animado con imágenes
+             del logo de NoteFlow, y encima el copy de bienvenida.
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-deco">
+
+            <!-- Carrusel animado de imágenes de fondo (efecto visual, sin interacción) -->
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
+
+                    <!-- Columna izquierda del carrusel: se desplaza hacia arriba con CSS/JS -->
+                    <div class="columna_izquierda">
+                        <!-- Las imágenes se repiten para crear efecto de scroll infinito -->
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
+
+                    <!-- Columna derecha del carrusel: se desplaza hacia abajo (dirección opuesta) -->
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido de marca que se muestra encima del carrusel (z-index superior) -->
+            <div class="panel-deco-content">
+
+                <!-- Logo de texto: "Note" en color normal + "Flow" en color de acento -->
+                <div class="deco-logo">Note<span>Flow</span></div>
+
+                <h1>Bienvenido<br>de vuelta</h1>
+                <p>Accede a tus notas, ideas y tareas desde cualquier lugar y en cualquier momento.</p>
+
+                <!-- Lista de características clave del producto (puntos de venta) -->
+                <ul class="feature-list">
+                    <li>Notas organizadas al instante</li>
+                    <li>Sincronización en tiempo real</li>
+                    <li>Acceso desde cualquier dispositivo</li>
+                    <li>Seguro y privado</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ────────────────────────────────────────────────
+             PANEL DERECHO — Formulario de inicio de sesión
+             Contiene: logo, nav de pestañas, campos de entrada
+             y opciones de login alternativas (Google).
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-form">
+
+            <!--
+                Formulario principal de autenticación.
+                action="/procesar-login" y method="POST" son el destino nativo del form,
+                pero el envío se intercepta con JavaScript (fetch) para manejar
+                la respuesta sin recargar la página.
+            -->
+            <form class="formulario" action="/procesar-login" method="POST">
+
+                <!-- Logo de NoteFlow dentro del formulario (versión compacta para móviles) -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación entre Iniciar Sesión y Registro -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario">
+                            <!-- Pestaña activa: resaltada con la clase "activo" -->
+                            <a href="/iniciarsesion.html" class="activo">Iniciar Sesión</a>
+                        </li>
+                        <li class="li-formulario">
+                            <a href="/registro.html">Registro</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <h2 class="h2-registro">INICIAR SESIÓN</h2>
+
+                <!-- Sección de campos del formulario -->
+                <section class="inputs">
+
+                    <!-- Campo: apodo o alias del usuario -->
+                    <!-- autocomplete="username" activa el autocompletado del navegador para credenciales -->
+                    <label>Apodo o alias</label>
+                    <input type="text"
+                           name="usuario"
+                           placeholder="Tu apodo o alias"
+                           autocomplete="username"
+                           required>
+
+                    <!-- Campo: contraseña -->
+                    <!-- autocomplete="current-password" indica al navegador que es la contraseña actual (no nueva) -->
+                    <label>Contraseña</label>
+                    <input type="password"
+                           name="contraseña"
+                           placeholder="Tu contraseña"
+                           autocomplete="current-password"
+                           required>
+
+                    <!-- Enlace de recuperación de contraseña debajo del campo de contraseña -->
+                    <p class="forgot-password">
+                        <a href="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
+                    </p>
+                </section>
+
+                <!-- Botón de envío principal — se deshabilita mientras se procesa la petición -->
+                <button type="submit">Entrar</button>
+
+                <!-- Separador visual entre login con formulario y login con Google -->
+                <div class="separador">
+                    <span>O inicia sesión con</span>
+                </div>
+
+                <!--
+                    Botón de Google OAuth.
+                    type="button" evita que envíe el formulario al hacer clic.
+                    Redirige directamente a /google/login, que inicia el flujo OAuth 2.0.
+                -->
+                <button type="button" class="google-btn" onclick="window.location.href='/google/login'">
+                    <!-- Ícono SVG de Google (devicons CDN) -->
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
+                    <span>Iniciar sesión con Google</span>
+                </button>
+
+                <!-- Enlace hacia el registro para usuarios que aún no tienen cuenta -->
+                <p class="registro-link">
+                    ¿No tienes cuenta? <a href="/registro.html">Regístrate gratis</a>
+                </p>
+                <p>
+                    <a href="javascript:history.back()" class="back-link"> <!-- funcion de javascript de volver a donde estaba-->
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Volver
+                    </a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle (incluye Popper.js) — necesario para los Toasts de Bootstrap -->
+    <!-- Se carga al final del body para no bloquear el renderizado del HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/iniciarsesion.js') }}"></script> <!-- Script personalizado del formulario de inicio de sesión -->
+
+</body>
+</html>
