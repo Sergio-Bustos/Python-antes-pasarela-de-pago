@@ -112,7 +112,8 @@ body {
     line-height: 1;
 }
 
-.panel-deco .deco-logo span { opacity: 0.55; }
+/* "Flow" ligeramente diferenciado pero legible */
+.panel-deco .deco-logo span { opacity: 0.70; }
 
 .panel-deco h1 {
     font-size: 1.7rem;
@@ -129,6 +130,8 @@ body {
     max-width: 300px;
     color: #fff;
     margin: 0;
+    /* Alineado a la izquierda como el resto del panel */
+    text-align: left;
 }
 
 .panel-deco .feature-list {
@@ -203,7 +206,8 @@ body {
     max-width: 260px;
     aspect-ratio: 1 / 1;
     object-fit: contain;
-    opacity: 0.18;
+    /* Bajada de 0.18 a 0.09 — deja de competir con el contenido del panel */
+    opacity: 0.09;
     flex-shrink: 0;
     display: block;
     filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
@@ -934,7 +938,7 @@ body.scroll-body .panel-form    { max-height: none; overflow-y: visible; }
     border: 2px solid var(--border);
     border-radius: 10px;
     background: var(--input-bg);
-    color: var(--text-dark);       /* texto visible sobre fondo claro */
+    color: var(--text-dark);
     padding: 0;
     outline: none;
     caret-color: transparent;
