@@ -40,7 +40,7 @@
                 <i class="fas fa-search"></i> Realiza la busqueda
             </button>
             <a href="{{ url_for('perfil') }}" class="usuario-info">
-                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto">
+                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
                 <span>{{ usuario.Nombres }}</span>
                 <i class="fas fa-chevron-down profile-dropdown-icon"></i>
             </a>
@@ -292,11 +292,11 @@
             <i class="fas fa-image" style="color:#27ae60"></i>
             <span>Imagen</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-audio" class="formato-opcion">
             <i class="fas fa-microphone" style="color:#e74c3c"></i>
             <span>Audio</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-video" class="formato-opcion">
             <i class="fas fa-video" style="color:#2980b9"></i>
             <span>Video</span>
         </a>

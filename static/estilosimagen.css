@@ -71,7 +71,7 @@ header {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: rgba(255,255,255,0.15);
+    background: var(--blanco);
     color: var(--morado-oscuro);
     border: 1.5px solid #d1c4e9;
     border-radius: var(--radio-btn);
@@ -82,7 +82,6 @@ header {
     text-decoration: none;
     cursor: pointer;
     transition: all 0.18s;
-    background: var(--blanco);
 }
 .btn-volver:hover { background: var(--violeta-suave); color: var(--morado-vivo); }
 
@@ -93,10 +92,7 @@ header h1 {
     color: var(--morado-oscuro);
     margin: 0;
 }
-header h1 span {
-    color: var(--morado-vivo);
-    font-size: 0.85em;
-}
+header h1 span { color: var(--morado-vivo); font-size: 0.85em; }
 
 .btn-cargar-foto {
     display: inline-flex;
@@ -118,7 +114,6 @@ header h1 span {
 
 #upload-input { display: none; }
 
-/* Estado guardado en header */
 .estado-guardado {
     display: inline-flex;
     align-items: center;
@@ -185,7 +180,7 @@ header h1 span {
     display: none;
 }
 
-/* Barra inferior del canvas: título, descripción, etiquetas, guardar */
+/* Barra inferior del canvas */
 .barra-inferior {
     background: var(--gris-claro);
     border-top: 1.5px solid var(--violeta-suave);
@@ -301,7 +296,6 @@ header h1 span {
     padding: 2px;
 }
 
-/* Botones del panel — misma familia que el dibujo */
 .btn-panel {
     display: inline-flex;
     align-items: center;
@@ -320,31 +314,104 @@ header h1 span {
     color: var(--morado-medio);
     box-shadow: 0 2px 6px rgba(90,50,180,0.08);
 }
-.btn-panel:hover { background: var(--violeta-suave); color: var(--morado-vivo); }
-
-.btn-panel.full  { width: 100%; }
-
-.btn-panel.active {
-    background: var(--morado-vivo);
-    color: #fff;
-    box-shadow: 0 3px 10px rgba(124,77,255,0.35);
-}
-
-.btn-panel.danger {
-    background: #fce4ec;
-    color: #c62828;
-}
+.btn-panel:hover  { background: var(--violeta-suave); color: var(--morado-vivo); }
+.btn-panel.full   { width: 100%; }
+.btn-panel.active { background: var(--morado-vivo); color: #fff; box-shadow: 0 3px 10px rgba(124,77,255,0.35); }
+.btn-panel.danger { background: #fce4ec; color: #c62828; }
 .btn-panel.danger:hover { background: #f8bbd0; }
-
-.btn-panel.amarillo {
-    background: var(--amarillo);
-    color: var(--morado-oscuro);
-    font-weight: 900;
-}
+.btn-panel.amarillo { background: var(--amarillo); color: var(--morado-oscuro); font-weight: 900; }
 .btn-panel.amarillo:hover { background: #ffd740; transform: translateY(-1px); }
 
-.btn-panel.cyan { background: #e0f7fa; color: #006064; }
-.btn-panel.cyan:hover { background: #b2ebf2; }
+/* ══════════════════════════════════════════
+   MODAL SALIDA SIN GUARDAR
+══════════════════════════════════════════ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 10, 40, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.visible { display: flex; }
+
+.modal-box {
+    background: var(--blanco);
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    box-shadow: 0 24px 60px var(--sombra);
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-box .modal-icono {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff3cd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+.modal-box .modal-icono i {
+    font-size: 1.6rem;
+    color: #e67e22;
+}
+
+.modal-box h3 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--morado-oscuro);
+    margin-bottom: 8px;
+}
+.modal-box p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 24px;
+}
+.modal-box p strong { color: var(--morado-oscuro); }
+
+.modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-modal-cancelar {
+    padding: 10px 22px;
+    border-radius: var(--radio-btn);
+    border: 1.5px solid #d1c4e9;
+    background: var(--violeta-suave);
+    color: var(--morado-oscuro);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.btn-modal-cancelar:hover { background: #d1c4e9; }
+
+.btn-modal-salir {
+    padding: 10px 22px;
+    border-radius: var(--radio-btn);
+    border: none;
+    background: var(--rojo);
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.35);
+    transition: all 0.18s;
+}
+.btn-modal-salir:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(239,68,68,0.45); }
 
 /* ══════════════════════════════════════════
    TOAST

@@ -128,34 +128,7 @@
 
     </div><!-- /panel -->
 
-    <!-- ── Modal: confirmar salir sin guardar ── -->
-    <div id="modal-salir-backdrop"
-         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9998;"></div>
-    <div id="modal-salir"
-         style="display:none; position:fixed; top:50%; left:50%;
-                transform:translate(-50%,-50%); background:#fff; border-radius:14px;
-                padding:32px 28px; z-index:9999; max-width:380px; width:90%;
-                box-shadow:0 8px 32px rgba(0,0,0,.22); text-align:center;">
-        <div style="font-size:2.2rem; margin-bottom:10px;">⚠️</div>
-        <h3 style="margin:0 0 10px; font-size:1.1rem; color:#212529;">¿Salir sin guardar?</h3>
-        <p style="color:#6c757d; font-size:.93rem; margin-bottom:22px;">
-            Tienes un dibujo sin guardar. Si sales ahora,
-            <strong>se perderá todo el trabajo.</strong>
-        </p>
-        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-            <button id="btn-salir-cancelar"
-                    style="padding:9px 22px; border-radius:8px; border:1.5px solid #dee2e6;
-                           background:#f8f9fa; cursor:pointer; font-size:.93rem; font-weight:600;">
-                Seguir editando
-            </button>
-            <button id="btn-salir-confirmar"
-                    style="padding:9px 22px; border-radius:8px; border:none;
-                           background:#e74c3c; color:#fff; cursor:pointer;
-                           font-size:.93rem; font-weight:600;">
-                Sí, salir
-            </button>
-        </div>
-    </div>
+
 
     <!-- Toast -->
     <div class="toast-dibujo" id="toastDibujo"></div>

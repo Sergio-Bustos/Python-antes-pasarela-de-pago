@@ -19,6 +19,63 @@ let dibujando          = false;
 let xAnterior = 0, yAnterior = 0;
 let trazosPaint        = [];
 let imagenCargada      = false;
+let notaGuardada       = false;
+
+// ══════════════════════════════════════════════
+//  MODAL SALIDA SIN GUARDAR
+// ══════════════════════════════════════════════
+
+(function inyectarModal() {
+    const overlay = document.createElement('div');
+    overlay.id        = 'modalSalida';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>¿Salir sin guardar?</h3>
+            <p>Tienes cambios sin guardar. Si sales ahora, <strong>se perderá todo el trabajo.</strong></p>
+            <div class="modal-btns">
+                <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
+                <button class="btn-modal-salir"    id="btnModalSalir">Sí, salir</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+})();
+
+let urlDestino = null;
+
+function mostrarModal(url) {
+    urlDestino = url;
+    document.getElementById('modalSalida').classList.add('visible');
+}
+function ocultarModal() {
+    document.getElementById('modalSalida').classList.remove('visible');
+    urlDestino = null;
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'btnModalCancelar') ocultarModal();
+    if (e.target.id === 'btnModalSalir') {
+        notaGuardada = true;            // desactiva beforeunload
+        ocultarModal();
+        window.location.href = urlDestino || '/notas';
+    }
+    if (e.target.id === 'modalSalida') ocultarModal();
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (imagenCargada && !notaGuardada) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+document.getElementById('btnVolver').addEventListener('click', function(e) {
+    if (imagenCargada && !notaGuardada) {
+        e.preventDefault();
+        mostrarModal(this.getAttribute('href') || '/notas');
+    }
+});
 
 // ══════════════════════════════════════════════
 //  CARGA DE IMAGEN
@@ -38,6 +95,7 @@ imgOriginal.onload = () => {
     canvasVisible.style.display = 'block';
     placeholder.style.display   = 'none';
     imagenCargada = true;
+    notaGuardada  = false;
     actualizarLienzoCompleto();
 };
 
@@ -98,7 +156,7 @@ function toggleFiltroMorado() {
 //  PINCEL / DIBUJO
 // ══════════════════════════════════════════════
 function obtenerPosicionReal(e) {
-    const rect  = canvasVisible.getBoundingClientRect();
+    const rect   = canvasVisible.getBoundingClientRect();
     const scaleX = canvasVisible.width  / rect.width;
     const scaleY = canvasVisible.height / rect.height;
     return {
@@ -172,8 +230,8 @@ function resetearTodo(limpiarImagen = true) {
         imagenCargada = false;
         imgOriginal   = new Image();
         ctxVisible.clearRect(0, 0, canvasVisible.width, canvasVisible.height);
-        canvasVisible.style.display = 'none';
-        placeholder.style.display   = 'flex';
+        canvasVisible.style.display   = 'none';
+        placeholder.style.display     = 'flex';
         canvasVisible.style.transform = 'none';
     } else {
         actualizarLienzoCompleto();
@@ -214,10 +272,9 @@ async function guardarEnBackend() {
     const etiquetas   = document.getElementById('inputEtiquetas').value.trim();
 
     const btn = document.getElementById('btnGuardar');
-    btn.disabled   = true;
-    btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
-    // Preparar canvas final (filtros + trazos)
     procesarImagenEnBuffer();
     trazosPaint.forEach(trazo => {
         if (trazo.puntos.length < 2) return;
@@ -242,14 +299,15 @@ async function guardarEnBackend() {
             const resp = await fetch('/guardar-nota-imagen', { method: 'POST', body: formData });
             const data = await resp.json();
             if (data.success) {
-                mostrarToast('✓ Nota guardada correctamente');
+                notaGuardada = true;
+                mostrarToast('Nota guardada correctamente');
                 const est = document.getElementById('estadoGuardado');
                 est.classList.add('visible');
                 setTimeout(() => est.classList.remove('visible'), 3000);
             } else {
                 mostrarToast(data.error || 'Error al guardar');
             }
-        } catch (err) {
+        } catch {
             mostrarToast('Error de conexión');
         } finally {
             btn.disabled  = false;

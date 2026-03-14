@@ -45,11 +45,7 @@
             </h2>
         </div>
         <a href="{{ url_for('perfil') }}" class="usuario-info">
-            {% if usuario.Foto %}
-                <img src="{{ url_for('static', filename=usuario.Foto) }}" alt="Foto de perfil">
-            {% else %}
-                <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
-            {% endif %}
+          <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto de perfil"> 
             <span>{{ usuario.Nombres }}</span>
             <i class="fas fa-chevron-down profile-dropdown-icon"></i>
         </a>
@@ -337,10 +333,10 @@
         <a href="/crear-nota-imagen" class="formato-opcion">
             <i class="fas fa-image" style="color:#27ae60"></i><span>Imagen</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-audio" class="formato-opcion">
             <i class="fas fa-microphone" style="color:#e74c3c"></i><span>Audio</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-video" class="formato-opcion">
             <i class="fas fa-video" style="color:#2980b9"></i><span>Video</span>
         </a>
         <a href="/bloc-dibujo" class="formato-opcion">

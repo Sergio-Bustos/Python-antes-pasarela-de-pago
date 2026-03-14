@@ -3,7 +3,7 @@
 # =============================================== IMPORTACIONES =========================================================
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from flask_mail import Mail, Message
-
+from flask_sqlalchemy import SQLAlchemy
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google_auth_oauthlib.flow import Flow
@@ -32,6 +32,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'tu_clave_secreta_aqui_cambiala')
 app.static_folder = 'static'
 app.static_url_path = '/static'
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123456@db:5432/dbnoteflow"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
 # Carpetas de uploads
@@ -814,9 +816,10 @@ def dashboard():
             return redirect(url_for('mostrar_login'))
  
         usuario_para_template = {
-            'nombre': usuario_row.get('Nombres'),
-            'color_principal': usuario_row.get('Color_principal', 'Blanco'),
-            'foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'img/default_profile.png'
+            'Nombres': usuario_row.get('Nombres'),
+            'Color_principal': usuario_row.get('Color_principal', 'Blanco'),
+            'Foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'default_profile.png',
+
         }
 
         cursor.execute("""
@@ -1893,5 +1896,294 @@ def guardar_nota_texto():
     finally:
         cerrar_db(cursor, conexion)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+# ==============================================================================
+# 15 - EDITOR DE AUDIO — Rutas y lógica de backend
+# ==============================================================================
+
+# ── Carpeta de uploads de audios ──────────────────────────────────────────────
+AUDIO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "audios")
+if not os.path.exists(AUDIO_UPLOAD_FOLDER):
+    os.makedirs(AUDIO_UPLOAD_FOLDER)
+
+# Extensiones y tipos MIME permitidos para audio
+AUDIO_EXTENSIONES_PERMITIDAS = {'.mp3', '.aac', '.ogg', '.wav', '.flac', '.wma', '.m4a', '.webm'}
+AUDIO_TIPOS_MIME_PERMITIDOS  = {
+    'audio/mpeg', 'audio/mp3', 'audio/aac', 'audio/ogg', 'audio/wav',
+    'audio/flac', 'audio/x-flac', 'audio/wma', 'audio/x-ms-wma',
+    'audio/mp4', 'audio/x-m4a', 'audio/webm', 'video/webm'
+}
+AUDIO_MAX_BYTES = 200 * 1024 * 1024   # 200 MB
+
+
+# ── Vista del editor de audio ─────────────────────────────────────────────────
+@app.route('/crear-nota-audio')
+@login_required
+def crear_nota_audio():
+    """Página del editor de audio."""
+    return render_template("editoraudio.html")
+
+
+# ── Guardar nota de audio ─────────────────────────────────────────────────────
+@app.route('/guardar-nota-audio', methods=['POST'])
+@login_required
+def guardar_nota_audio():
+    """
+    Recibe el archivo de audio (multipart/form-data), lo valida,
+    lo guarda en disco y crea una nota de tipo 'audio' en la BD.
+
+    Campos del formulario:
+        titulo        — str, máx 100 chars
+        descripcion   — str, máx 200 chars (opcional)
+        etiquetas     — str, separadas por coma (opcional)
+        audio         — File
+
+    Respuesta JSON:
+        { success: True, nota_id: int, redirect: '/notas' }
+        { error: 'mensaje' }
+    """
+    user_id  = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Leer campos de texto ────────────────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Audio sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de audio: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        # ── 2. Validar archivo ─────────────────────────────────────────────
+        archivo = request.files.get('audio')
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ningún archivo de audio'}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in AUDIO_EXTENSIONES_PERMITIDAS:
+            return jsonify({
+                'error': f'Formato no permitido ({ext}). '
+                          'Usa: MP3, AAC, OGG, WAV, FLAC, WMA, M4A'
+            }), 400
+
+        # Leer los bytes para verificar el tamaño real
+        audio_bytes = archivo.read()
+        if len(audio_bytes) > AUDIO_MAX_BYTES:
+            return jsonify({'error': 'El archivo supera el límite de 200 MB'}), 400
+
+        # ── 3. Guardar archivo físico ──────────────────────────────────────
+        filename      = f"audio_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(AUDIO_UPLOAD_FOLDER, filename)
+
+        with open(ruta_completa, 'wb') as f:
+            f.write(audio_bytes)
+
+        ruta_db = f"uploads/audios/{filename}"
+
+        # ── 4. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            # Limpiar archivo ya guardado
+            try: os.remove(ruta_completa)
+            except: pass
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 5. Insertar nota ───────────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'audio', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
+
+        nota_id = cursor.fetchone()[0]
+
+        # ── 6. Registrar adjunto ───────────────────────────────────────────
+        formato_adj = ext.lstrip('.')   # ej: "ogg", "mp3", "wav"
+
+        # Garantizar que el formato exista en Tipos (FK requerida)
+        cursor.execute("""
+            INSERT INTO public."Tipos" ("Formato")
+            VALUES (%s)
+            ON CONFLICT ("Formato") DO NOTHING
+        """, (formato_adj,))
+
+        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, formato_adj, ruta_db, nota_id))
+
+        # ── 7. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute(
+                        'SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"'
+                    )
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de audio guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de audio'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+## ===============================================================================
+## 16. Editor de video - Ruta BACK END
+## ===============================================================================
+
+@app.route('/crear-nota-video')
+@login_required
+def crear_nota_video():
+    """Página del editor de video."""
+    return render_template("editorvideo.html")
+
+# ==============================================================================
+# 17. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
+# ==============================================================================
+
+db = SQLAlchemy(app)
+
+# =========================
+# CUENTAS
+# =========================
+class Cuentas(db.Model):
+    __tablename__ = "Cuentas"
+
+    ID_Cuenta = db.Column(db.Integer, primary_key=True)
+    Usuario = db.Column(db.Text, nullable=False)
+    Contraseña = db.Column(db.Text, nullable=False)
+    Nombres = db.Column(db.Text, nullable=False)
+    Apellidos = db.Column(db.Text, nullable=False)
+    Telefono = db.Column(db.Numeric(15,0), nullable=False)
+    Correo = db.Column(db.Text, nullable=False)
+    Color_principal = db.Column(db.Text, nullable=False)
+    reset_token = db.Column(db.Text)
+    reset_token_expira = db.Column(db.DateTime(timezone=True))
+    Foto = db.Column(db.Text)
+
+    notas = db.relationship("Notas", backref="cuenta", lazy=True)
+    carpetas = db.relationship("Carpetas", backref="cuenta", lazy=True)
+
+
+# =========================
+# CARPETAS
+# =========================
+class Carpetas(db.Model):
+    __tablename__ = "Carpetas"
+
+    ID_Carpeta = db.Column(db.Integer, primary_key=True)
+    Nombre_carpeta = db.Column(db.Text, nullable=False)
+    ID_Cuenta = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
+    Estado = db.Column(db.Text, nullable=False)
+
+    notas = db.relationship("Notas", backref="carpeta", lazy=True)
+
+
+# =========================
+# NOTAS
+# =========================
+class Notas(db.Model):
+    __tablename__ = "Notas"
+
+    ID_Nota = db.Column(db.Integer, primary_key=True)
+    Fecha_decreacion = db.Column(db.Date, nullable=False)
+    Contenido = db.Column(db.Text, nullable=False)
+    Descripcion = db.Column(db.Text, nullable=False)
+    Titulo = db.Column(db.Text, nullable=False)
+    Fecha_deedicion = db.Column(db.Date, nullable=False)
+    Estado = db.Column(db.Text, nullable=False)
+    Formato = db.Column(db.Text, nullable=False)
+
+    ID_Carpeta = db.Column(db.Integer, db.ForeignKey("Carpetas.ID_Carpeta"))
+    ID_Cuenta = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
+
+
+    adjuntos = db.relationship("Adjuntos", backref="nota", lazy=True)
+
+
+# =========================
+# ETIQUETAS
+# =========================
+class Etiquetas(db.Model):  
+    __tablename__ = "Etiquetas"
+
+    ID_Etiqueta = db.Column(db.Integer, primary_key=True)
+    Nombre_etiqueta = db.Column(db.Text)
+
+    notas = db.relationship("Notas_etiquetas", backref="etiqueta", lazy=True)
+
+
+# =========================
+# NOTAS_ETIQUETAS (tabla puente)
+# =========================
+class Notas_etiquetas(db.Model):
+    __tablename__ = "Notas_etiquetas"
+
+    ID_Nota = db.Column(db.Integer, db.ForeignKey("Notas.ID_Nota"), primary_key=True)
+    ID_Etiqueta = db.Column(db.Integer, db.ForeignKey("Etiquetas.ID_Etiqueta"), primary_key=True)
+
+
+# =========================
+# ADJUNTOS
+# =========================
+class Adjuntos(db.Model):
+    __tablename__ = "Adjuntos"
+
+    ID_Adjunto = db.Column(db.Integer, primary_key=True)
+    Nombre_archivo = db.Column(db.Text, nullable=False)
+    Formato = db.Column(db.Text, nullable=False)
+    Ruta_archivo = db.Column(db.Text, nullable=False)
+    ID_Nota = db.Column(db.Integer, db.ForeignKey("Notas.ID_Nota"), nullable=False)
+
+
+# =========================
+# TIPOS
+# =========================
+class Tipos(db.Model):
+    __tablename__ = "Tipos"
+
+    Formato = db.Column(db.Text, primary_key=True)
+
+with app.app_context():
+    print("ATENCION: CREANDO TABLAS ")
+    db.create_all()

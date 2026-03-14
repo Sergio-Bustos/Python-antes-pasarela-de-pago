@@ -32,8 +32,8 @@
         <div class="perfil-info">
             <div class="avatar-container">
                 <img id="foto-perfil"
-                     src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}"
-                     alt="Foto de perfil">
+                    src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}"
+                        alt="Foto de perfil">
             </div>
 
             <div class="data">
@@ -43,7 +43,7 @@
                 <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
 
                 <!-- Botón eliminar foto — solo visible si el usuario tiene foto propia -->
-                {% if usuario.Foto and usuario.Foto not in ['img/default_profile.png', 'uploads/profile/default_profile.png', '', none] %}
+               {% if usuario.Foto and usuario.Foto not in ['img/default_profile_cloud.svg', 'uploads/profile/default_profile_cloud.svg', '', none] %}
                 <button id="btn-eliminar-foto" class="btn-eliminar-foto" onclick="confirmarEliminarFoto()">
                     <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
                 </button>

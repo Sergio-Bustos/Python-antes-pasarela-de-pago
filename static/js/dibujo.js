@@ -8,7 +8,6 @@ const grosorInput  = document.getElementById('grosorPincel');
 const grosorPunto  = document.getElementById('grosorPunto');
 const canvasHint   = document.getElementById('canvasHint');
 
-// Ajustar canvas al contenedor
 function ajustarCanvas() {
     const wrap     = canvas.parentElement;
     const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -33,41 +32,64 @@ let lienzoPristino = true;
 let notaGuardada   = false;
 
 /* ──────────────────────────────────────────
-   SALIR SIN GUARDAR — beforeunload + modal
+   MODAL SALIDA SIN GUARDAR
 ────────────────────────────────────────── */
-window.addEventListener('beforeunload', function (e) {
+
+// Inyectar HTML del modal si no existe en el HTML original
+(function inyectarModal() {
+    if (document.getElementById('modalSalida')) return;
+    const overlay = document.createElement('div');
+    overlay.id        = 'modalSalida';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>¿Salir sin guardar?</h3>
+            <p>Tienes un dibujo sin guardar. Si sales ahora, <strong>se perderá todo el trabajo.</strong></p>
+            <div class="modal-btns">
+                <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
+                <button class="btn-modal-salir"    id="btnModalSalir">Sí, salir</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+})();
+
+let urlDestino = null;
+
+function mostrarModal(url) {
+    urlDestino = url;
+    document.getElementById('modalSalida').classList.add('visible');
+}
+function ocultarModal() {
+    document.getElementById('modalSalida').classList.remove('visible');
+    urlDestino = null;
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'btnModalCancelar') ocultarModal();
+    if (e.target.id === 'btnModalSalir') {
+        notaGuardada = true;            // desactiva beforeunload
+        ocultarModal();
+        window.location.href = urlDestino || '/notas';
+    }
+    // Cerrar al hacer clic en el fondo
+    if (e.target.id === 'modalSalida') ocultarModal();
+});
+
+/* beforeunload — solo dispara si hay cambios sin guardar */
+window.addEventListener('beforeunload', function(e) {
     if (!lienzoPristino && !notaGuardada) {
         e.preventDefault();
         e.returnValue = '';
     }
 });
 
-let urlDestino = null;
-
-function mostrarModalSalir(url) {
-    urlDestino = url;
-    document.getElementById('modal-salir-backdrop').style.display = 'block';
-    document.getElementById('modal-salir').style.display = 'block';
-}
-function ocultarModalSalir() {
-    document.getElementById('modal-salir-backdrop').style.display = 'none';
-    document.getElementById('modal-salir').style.display = 'none';
-    urlDestino = null;
-}
-
-document.getElementById('btnVolver').addEventListener('click', function (e) {
+/* Botón Volver */
+document.getElementById('btnVolver').addEventListener('click', function(e) {
     if (!lienzoPristino && !notaGuardada) {
         e.preventDefault();
-        mostrarModalSalir(this.href);
+        mostrarModal(this.getAttribute('href') || '/notas');
     }
-});
-
-document.getElementById('btn-salir-cancelar').addEventListener('click', ocultarModalSalir);
-document.getElementById('modal-salir-backdrop').addEventListener('click', ocultarModalSalir);
-
-document.getElementById('btn-salir-confirmar').addEventListener('click', function () {
-    notaGuardada = true;
-    window.location.href = urlDestino || '/notas';
 });
 
 /* ──────────────────────────────────────────
@@ -178,7 +200,6 @@ canvas.addEventListener('mousedown',  iniciar);
 canvas.addEventListener('mousemove',  dibujar);
 canvas.addEventListener('mouseup',    detener);
 canvas.addEventListener('mouseleave', detener);
-
 canvas.addEventListener('touchstart', iniciar,  { passive: false });
 canvas.addEventListener('touchmove',  dibujar,  { passive: false });
 canvas.addEventListener('touchend',   detener);
@@ -265,7 +286,7 @@ document.getElementById('btnLimpiar').addEventListener('click', () => {
 });
 
 /* ──────────────────────────────────────────
-   GUARDAR NOTA — envía al backend
+   GUARDAR NOTA
 ────────────────────────────────────────── */
 async function guardarNota() {
     const titulo      = document.getElementById('inputTitulo').value.trim()      || 'Dibujo sin título';
@@ -273,7 +294,7 @@ async function guardarNota() {
     const etiquetas   = document.getElementById('inputEtiquetas').value.trim();
 
     if (lienzoPristino) {
-        mostrarToast('¡El lienzo está vacío! Dibuja algo primero.');
+        mostrarToast('El lienzo está vacío. Dibuja algo primero.');
         return;
     }
 
@@ -294,14 +315,14 @@ async function guardarNota() {
 
             if (data.success) {
                 notaGuardada = true;
-                mostrarToast('✓ Nota guardada correctamente');
+                mostrarToast('Nota guardada correctamente');
                 const est = document.getElementById('estadoGuardado');
                 est.classList.add('visible');
                 setTimeout(() => est.classList.remove('visible'), 3000);
             } else {
                 mostrarToast(data.error || 'Error al guardar');
             }
-        } catch (err) {
+        } catch {
             mostrarToast('Error de conexión');
         } finally {
             btns.forEach(b => { b.disabled = false; b.innerHTML = '<i class="fas fa-save"></i> Guardar nota'; });

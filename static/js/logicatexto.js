@@ -12,7 +12,7 @@ let urlDestino   = null;
     document.body.classList.toggle('tema-claro',  !esOscuro);
 })();
 
-window.addEventListener('pageshow', function (e) {
+window.addEventListener('pageshow', function(e) {
     if (e.persisted) {
         const match = document.cookie.split(';').find(c => c.trim().startsWith('tema='));
         if (!match) return;
@@ -20,6 +20,68 @@ window.addEventListener('pageshow', function (e) {
         document.body.classList.toggle('tema-oscuro', esOscuro);
         document.body.classList.toggle('tema-claro',  !esOscuro);
     }
+});
+
+// ========== MODAL SALIDA SIN GUARDAR ==========
+
+// El HTML del editor ya trae #modalSalida; si no existiera lo inyectamos.
+(function inyectarModalSiNoExiste() {
+    if (document.getElementById('modalSalida')) return;
+    const overlay = document.createElement('div');
+    overlay.id        = 'modalSalida';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>¿Salir sin guardar?</h3>
+            <p>Tienes cambios sin guardar. Si sales ahora, <strong>se perderán.</strong></p>
+            <div class="modal-btns">
+                <button class="btn-modal-cancelar" id="btnModalCancelar">Quedarse</button>
+                <button class="btn-modal-salir"    id="btnModalSalir">Salir igual</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+})();
+
+// Si el HTML original usa clases distintas, actualizamos el modal existente para que
+// use las clases del sistema unificado.
+(function normalizarModalHTML() {
+    const overlay = document.getElementById('modalSalida');
+    if (!overlay) return;
+    const box = overlay.querySelector('.modal-box');
+    if (!box) return;
+
+    // Aseguramos que tenga el icono
+    if (!box.querySelector('.modal-icono')) {
+        const icono = document.createElement('div');
+        icono.className = 'modal-icono';
+        icono.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        box.insertBefore(icono, box.firstChild);
+    }
+
+    // Normalizar botones a las clases unificadas
+    const btnCancelar = box.querySelector('.btn-cancelar-modal, #btnModalCancelar');
+    const btnSalir    = box.querySelector('.btn-salir-modal, #btnModalSalir');
+    if (btnCancelar) { btnCancelar.className = 'btn-modal-cancelar'; btnCancelar.id = 'btnModalCancelar'; }
+    if (btnSalir)    { btnSalir.className    = 'btn-modal-salir';    btnSalir.id    = 'btnModalSalir';    }
+})();
+
+function mostrarModal() {
+    document.getElementById('modalSalida').classList.add('visible');
+}
+function ocultarModal() {
+    document.getElementById('modalSalida').classList.remove('visible');
+    urlDestino = null;
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'btnModalCancelar') ocultarModal();
+    if (e.target.id === 'btnModalSalir') {
+        notaGuardada = true;            // desactiva beforeunload
+        ocultarModal();
+        window.location.href = urlDestino || '/notas';
+    }
+    if (e.target.id === 'modalSalida') ocultarModal();
 });
 
 // ========== TOOLBAR ==========
@@ -51,12 +113,12 @@ async function guardarNota() {
     const textoPlano  = document.getElementById('cuerpo-nota').innerText.trim();
 
     if (!titulo) {
-        mostrarToast('⚠️ Escribe un título para la nota', 'error');
+        mostrarToast('Escribe un título para la nota');
         document.getElementById('inputTitulo').focus();
         return;
     }
     if (!textoPlano) {
-        mostrarToast('⚠️ La nota está vacía', 'error');
+        mostrarToast('La nota está vacía');
         document.getElementById('cuerpo-nota').focus();
         return;
     }
@@ -68,41 +130,39 @@ async function guardarNota() {
     formData.append('etiquetas',   etiquetas);
 
     try {
-        const res = await fetch('/guardar-nota-texto', {
-            method: 'POST',
-            body: formData
-        });
+        const res  = await fetch('/guardar-nota-texto', { method: 'POST', body: formData });
         const data = await res.json();
 
         if (data.success) {
             notaGuardada = true;
-            mostrarToast('✅ Nota guardada correctamente', 'success');
+            mostrarToast('Nota guardada correctamente');
             setTimeout(() => {
                 window.location.href = data.redirect || '/notas';
             }, 1200);
         } else {
-            mostrarToast('❌ ' + (data.error || 'Error al guardar'), 'error');
+            mostrarToast(data.error || 'Error al guardar');
         }
     } catch (err) {
         console.error(err);
-        mostrarToast('❌ Error de conexión al servidor', 'error');
+        mostrarToast('Error de conexión al servidor');
     }
 }
 
 // ========== BOTÓN VOLVER ==========
-document.getElementById('btnVolver').addEventListener('click', function (e) {
+document.getElementById('btnVolver').addEventListener('click', function(e) {
     e.preventDefault();
     const textoPlano = document.getElementById('cuerpo-nota').innerText.trim();
     if (textoPlano && !notaGuardada) {
         urlDestino = '/notas';
-        document.getElementById('modalSalida').classList.add('visible');
+        mostrarModal();
     } else {
+        notaGuardada = true;
         window.location.href = '/notas';
     }
 });
 
 // ========== ADVERTENCIA AL CERRAR PESTAÑA ==========
-window.addEventListener('beforeunload', function (e) {
+window.addEventListener('beforeunload', function(e) {
     const textoPlano = document.getElementById('cuerpo-nota').innerText.trim();
     if (textoPlano && !notaGuardada) {
         e.preventDefault();
@@ -110,22 +170,11 @@ window.addEventListener('beforeunload', function (e) {
     }
 });
 
-// ========== MODAL SALIDA ==========
-function cerrarModal() {
-    document.getElementById('modalSalida').classList.remove('visible');
-    urlDestino = null;
-}
-
-function confirmarSalida() {
-    document.getElementById('modalSalida').classList.remove('visible');
-    window.location.href = urlDestino || '/notas';
-}
-
 // ========== TOAST ==========
-function mostrarToast(mensaje, tipo = '') {
+function mostrarToast(mensaje) {
     const t = document.getElementById('toast');
     t.textContent = mensaje;
-    t.className   = 'toast ' + tipo;
+    t.className   = 'toast';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
 }
